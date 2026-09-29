@@ -148,6 +148,12 @@ def main():
     make_print_html(deck_src, DECK_PRINT_CSS, deck_pr)
     render_pdf(deck_pr, OUT / "presentation.pdf", landscape=True)
 
+    # 3b: research paper (renders as-is; it carries its own two-column @media print CSS,
+    # so no generic DOC_PRINT_CSS injection — that would override its @page margins)
+    paper = DOCS / "research-paper.html"
+    if paper.exists():
+        render_pdf(paper, OUT / "research-paper.pdf", landscape=False)
+
     # 4: research log (markdown -> html -> pdf)
     md = ROOT / "RESEARCH_LOG.md"
     log_html = BUILD / "research-log_print.html"

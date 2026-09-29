@@ -1,0 +1,336 @@
+<title>Label-Free Multi-LLM Validation</title>
+<style>
+  :root {
+    --paper: #FBFAF7;
+    --ink: #191714;
+    --ink-soft: #46433D;
+    --ink-faint: #7C776E;
+    --rule: #CFC9BD;
+    --rule-soft: #E4DFD5;
+    --accent: #6E2B2B;      /* oxblood — section numbers, rules, links */
+    --accent-soft: #8a4a47;
+    --wash: #F3EEE4;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    margin: 0;
+    font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  ::selection { background: #E8D9C4; }
+
+  .sheet {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: clamp(28px, 5vw, 64px) clamp(20px, 5vw, 60px) 80px;
+    background: var(--paper);
+  }
+
+  /* ---- masthead ---- */
+  .venue {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-faint); text-align: center; margin-bottom: 20px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--rule-soft);
+  }
+  h1.title {
+    font-weight: 600; font-size: clamp(24px, 3.6vw, 33px); line-height: 1.16;
+    text-align: center; margin: 0 auto 18px; max-width: 22ch; text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .byline { text-align: center; margin-bottom: 6px; font-size: 17px; }
+  .byline .author { font-weight: 600; }
+  .affil { text-align: center; font-size: 13.5px; color: var(--ink-soft); font-style: italic; margin-bottom: 4px; }
+  .contact { text-align: center; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-faint); margin-bottom: 30px; }
+
+  /* ---- abstract ---- */
+  .abstract {
+    border-top: 2px solid var(--accent); border-bottom: 1px solid var(--rule);
+    padding: 16px 4px 18px; margin: 0 auto 8px; max-width: 62ch;
+  }
+  .abstract .lbl, .keywords .lbl {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+  .abstract p { margin: 8px 0 0; font-size: 14.5px; line-height: 1.62; text-align: justify; hyphens: auto; }
+  .keywords { max-width: 62ch; margin: 0 auto 4px; padding: 10px 4px; border-bottom: 1px solid var(--rule); }
+  .keywords span.k { font-size: 14px; }
+  .keywords .lbl { margin-right: 6px; }
+
+  /* ---- two-column body ---- */
+  .cols {
+    margin-top: 26px;
+    column-count: 2; column-gap: 34px;
+    column-rule: 1px solid var(--rule-soft);
+    font-size: 14.5px; line-height: 1.56;
+    text-align: justify; hyphens: auto;
+  }
+  @media (max-width: 720px) { .cols { column-count: 1; } }
+
+  h2.sec {
+    font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    margin: 20px 0 7px; break-after: avoid; color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+  }
+  h2.sec .n { color: var(--accent); margin-right: 8px; font-variant-numeric: tabular-nums; }
+  h2.sec:first-child { margin-top: 0; }
+  h3.sub { font-size: 14px; font-weight: 600; font-style: italic; margin: 14px 0 5px; break-after: avoid; }
+  .cols p { margin: 0 0 9px; }
+  .cols p.ni { text-indent: 1.3em; }  /* subsequent-paragraph indent, journal style */
+
+  /* full-width elements inside the columns */
+  .span { column-span: all; margin: 16px 0 18px; break-inside: avoid; }
+
+  figure.tbl { margin: 0; break-inside: avoid; }
+  figure.tbl figcaption {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 7px;
+  }
+  figure.tbl figcaption b { color: var(--accent); font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.small { font-size: 12.5px; }
+  th, td { text-align: left; padding: 6px 12px 6px 0; border-bottom: 1px solid var(--rule-soft); }
+  thead th { border-bottom: 1.5px solid var(--rule); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: var(--ink-soft); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.hl td { color: var(--accent); font-weight: 600; }
+  table caption { caption-side: bottom; text-align: left; font-size: 11px; color: var(--ink-faint); font-style: italic; padding-top: 8px; line-height: 1.4; }
+
+  .diagram { column-span: all; margin: 18px auto; break-inside: avoid; text-align: center; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram .cap { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .05em; margin-top: 8px; }
+
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .86em; }
+  code { background: var(--wash); padding: .05em .35em; border-radius: 3px; }
+
+  a { color: var(--accent); text-decoration: none; }
+  sup.cite { color: var(--accent); font-weight: 600; font-size: .72em; }
+
+  .callout {
+    border-left: 2.5px solid var(--accent); background: var(--wash);
+    padding: 9px 13px; margin: 4px 0 11px; font-size: 13.5px; line-height: 1.5;
+    break-inside: avoid;
+  }
+  .callout b { color: var(--accent); }
+
+  /* references */
+  .refs { column-span: all; margin-top: 22px; padding-top: 14px; border-top: 2px solid var(--accent); }
+  .refs h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 10px; }
+  ol.reflist { column-count: 2; column-gap: 34px; font-size: 12px; line-height: 1.42; padding-left: 20px; margin: 0; }
+  @media (max-width: 720px) { ol.reflist { column-count: 1; } }
+  ol.reflist li { margin-bottom: 7px; break-inside: avoid; padding-left: 2px; }
+  ol.reflist li::marker { color: var(--accent); }
+
+  .footer-note { column-span: all; margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--rule-soft); font-size: 11px; color: var(--ink-faint); font-family: "IBM Plex Mono", monospace; line-height: 1.5; }
+
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 16mm 15mm; }
+    body { font-size: 10pt; }
+    .sheet { max-width: none; padding: 0; }
+    .cols { font-size: 9.2pt; }
+  }
+</style>
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="sheet">
+
+  <div class="venue">Undergraduate Final-Year Project · Technical Manuscript · 2026</div>
+
+  <h1 class="title">Label-Free Validation of an Agentic Multi-LLM Question-Answering System</h1>
+
+  <div class="byline"><span class="author">Swaroop Naik</span></div>
+  <div class="affil">Department of Information Technology, Vidyalankar Institute of Technology, Mumbai, India</div>
+  <div class="contact">naikswaroop1910@gmail.com · github.com/Swaroop192005/V2_Agentic_LLM_System</div>
+
+  <div class="abstract">
+    <span class="lbl">Abstract —</span>
+    <p>Large language models (LLMs) answer open-ended questions fluently regardless of whether the answer is correct, and cannot reliably self-assess. We present an agentic multi-LLM system that decides how far to trust its own output <em>without any ground-truth answer key</em>. Two models (LLaMA&nbsp;3, Mistral) generate candidate answers independently; two further models (phi3 as Verifier, qwen3.5:9b as Judge) score both candidates blindly on a shared eight-factor rubric; three external checks — cross-model semantic agreement, and relevance-gated lookups against Wikipedia and Wikidata — corroborate the result; and a six-signal weighted confidence score gates a regeneration loop. Because no correctness labels exist in the target domain, every design decision is justified by label-free objectives — discrimination tests, internal consistency, and regeneration validity — rather than accuracy against a target. We report a complete 5,000-question dataset (8,432 logged attempts) generated under one consistent, bias-controlled regime, and four principal findings: (i) a judge model must be selected on per-criterion score variance, not mean or ceiling behaviour — a candidate with competitive averages scored all eight criteria identically on 57.5% of items; (ii) a naive evaluator design silently coupled the two judges (32 of 37 total scores identical) until made blind; (iii) answer-position and model-identity bias inflated an apparent quality gap that halved once evaluation was randomized and blinded; and (iv) the regeneration threshold, calibrated via a purpose-built control group and confirmed by a two-proportion test (p=0.011), ROC/Youden's&nbsp;J analysis, and bootstrap (95% CI [0.69, 0.75]), settles at 0.75. We further document three measurement errors detected and corrected before they became conclusions, and argue that this self-correction record is itself central to the credibility of label-free evaluation.</p>
+  </div>
+  <div class="keywords">
+    <span class="lbl">Index Terms —</span>
+    <span class="k">LLM-as-judge, multi-agent systems, answer validation, evaluation without ground truth, position bias, confidence calibration, retrieval-augmented generation.</span>
+  </div>
+
+  <div class="cols">
+
+    <h2 class="sec"><span class="n">I.</span>Introduction</h2>
+    <p>A language model asked a difficult question returns a coherent, confident answer whether or not it is factually correct, and its own reported certainty is a poor guide to correctness. For any system that must <em>act</em> on model output, the operative question is therefore not "what is the answer?" but "how much should this answer be trusted, and what should be done when trust is low?"</p>
+    <p class="ni">The intuitive remedy — asking a second model to check the first — fails quietly. A checker model drawn from the same family shares the generator's blind spots and, as an evaluator, exhibits a strong tendency to endorse fluent text.<sup class="cite">[1],[2]</sup> Worse, in many practical domains there is no labelled correctness signal to audit the checker against, so the usual escape hatch — measure accuracy — is unavailable.</p>
+    <p class="ni">This work confronts that constraint directly. We build an agentic pipeline in which trust is established through <em>independent corroboration</em> — multiple models that cross-examine one another, plus external knowledge sources — and is expressed as a single calibrated confidence score that gates regeneration. The central contribution is not the pipeline itself but a demonstrated, repeatable <em>method for validating and defending such a system where no ground truth exists</em>, together with a running, auditable record of the measurement errors caught along the way.</p>
+    <p class="ni">Concretely, we contribute: (1) a six-stage bias-controlled architecture with blind, order-randomized dual evaluation; (2) a family of label-free validation objectives that made each model and parameter choice falsifiable; (3) a control-group solution to the censored-data problem inherent in calibrating a regeneration threshold; and (4) a fully instrumented 5,000-question dataset storing every raw signal, released with the source.</p>
+
+    <h2 class="sec"><span class="n">II.</span>Background and Related Work</h2>
+    <p>The "LLM-as-a-judge" paradigm uses a strong model to score or rank the outputs of others, and correlates reasonably with human preference on aggregate benchmarks.<sup class="cite">[1]</sup> Its known pathologies motivate much of our design. LLM judges exhibit <em>position bias</em> (favouring an answer by its slot), <em>verbosity bias</em>, and <em>self-enhancement bias</em>;<sup class="cite">[2]</sup> purpose-built evaluator models such as Prometheus attempt to mitigate these with rubric fine-tuning<sup class="cite">[7]</sup> but impose their own output formats.</p>
+    <p class="ni">Our corroboration signals draw on established components: BERTScore for semantic similarity between generated texts,<sup class="cite">[3]</sup> Sentence-BERT embeddings for question–answer and query–document relevance,<sup class="cite">[4]</sup> and retrieval-augmented generation for grounding answers in external documents.<sup class="cite">[5]</sup> The idea that agreement among independently sampled reasoning paths signals reliability underlies self-consistency decoding.<sup class="cite">[6]</sup> For calibration without labels we borrow from diagnostic-test statistics: Youden's&nbsp;J for optimal-cutoff selection<sup class="cite">[8]</sup> and the Wilson score interval for small-sample proportions.<sup class="cite">[9]</sup> Unlike benchmark studies that assume a reference answer, our setting has none; our methodological focus is precisely the validation techniques that remain available under that constraint.</p>
+
+    <h2 class="sec"><span class="n">III.</span>System Architecture</h2>
+    <p>The pipeline (Fig.&nbsp;1) runs six stages per question. Stages&nbsp;1–2 generate two candidate answers independently with LLaMA&nbsp;3 and Mistral (sampling temperature 0.7). Stage&nbsp;3 (Verifier, phi3) and Stage&nbsp;5 (Judge, qwen3.5:9b) each score <em>both</em> candidates on the same eight-factor rubric — Factual Correctness, Question Relevance, Context Relevance, Faithfulness, Completeness, Hallucination-Free, Clarity, and Consistency, each 0–10 for a total of 80 — at temperature 0.1 for determinism; only the Judge additionally declares a winner. Stage&nbsp;4 computes semantic and external signals in parallel. Stage&nbsp;6 (Combiner, LLaMA&nbsp;3, temperature 0.4) synthesises the shipped answer from the best attempt.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 520 300" role="img" aria-label="Six-stage pipeline diagram.">
+        <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a857a"/></marker>
+        <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6E2B2B"/></marker></defs>
+        <style>
+          .b{fill:#FBFAF7;stroke:#8a857a;stroke-width:1.2;}
+          .ba{fill:#F3EEE4;stroke:#6E2B2B;stroke-width:1.3;}
+          .t{font-family:'IBM Plex Mono',monospace;font-size:9px;fill:#191714;}
+          .ts{font-family:'IBM Plex Mono',monospace;font-size:7px;fill:#7C776E;}
+          .fl{fill:none;stroke:#8a857a;stroke-width:1.2;}
+          .lp{fill:none;stroke:#6E2B2B;stroke-width:1.2;stroke-dasharray:4 3;}
+          .lbl{font-family:'IBM Plex Mono',monospace;font-size:7px;fill:#6E2B2B;}
+        </style>
+        <path class="fl" marker-end="url(#a)" d="M260,26 L260,36 L120,36 L120,48"/>
+        <path class="fl" marker-end="url(#a)" d="M260,26 L260,36 L400,36 L400,48"/>
+        <line class="fl" marker-end="url(#a)" x1="120" y1="78" x2="120" y2="96"/>
+        <line class="fl" marker-end="url(#a)" x1="400" y1="78" x2="400" y2="96"/>
+        <path class="fl" marker-end="url(#a)" d="M120,126 L120,140 L260,140 L260,152"/>
+        <path class="fl" marker-end="url(#a)" d="M400,126 L400,140 L260,140 L260,152"/>
+        <path class="fl" marker-end="url(#a)" d="M260,182 L260,196 L110,196 L110,208"/>
+        <line class="fl" marker-end="url(#a)" x1="260" y1="182" x2="260" y2="208"/>
+        <path class="fl" marker-end="url(#a)" d="M260,182 L260,196 L410,196 L410,208"/>
+        <line class="fl" marker-end="url(#a)" x1="260" y1="238" x2="260" y2="252"/>
+        <text x="273" y="250" class="lbl">≥0.75</text>
+        <path class="lp" marker-end="url(#ar)" d="M175,265 L40,265 L40,63 L58,63"/>
+        <text x="44" y="165" class="lbl" transform="rotate(-90 44 165)">regenerate (&lt;0.75, ≤2×)</text>
+
+        <rect class="b" x="185" y="6" width="150" height="20" rx="4"/><text x="260" y="19" text-anchor="middle" class="t">User Question</text>
+        <rect class="ba" x="58" y="48" width="124" height="30" rx="4"/><text x="120" y="61" text-anchor="middle" class="t">1 · LLaMA 3</text><text x="120" y="72" text-anchor="middle" class="ts">generate</text>
+        <rect class="ba" x="338" y="48" width="124" height="30" rx="4"/><text x="400" y="61" text-anchor="middle" class="t">2 · Mistral</text><text x="400" y="72" text-anchor="middle" class="ts">generate</text>
+        <rect class="b" x="58" y="96" width="124" height="30" rx="4"/><text x="120" y="109" text-anchor="middle" class="t">3 · Verifier phi3</text><text x="120" y="120" text-anchor="middle" class="ts">8-factor · blind</text>
+        <rect class="b" x="338" y="96" width="124" height="30" rx="4"/><text x="400" y="109" text-anchor="middle" class="t">4 · Similarity</text><text x="400" y="120" text-anchor="middle" class="ts">cosine + BERTScore</text>
+        <rect class="ba" x="150" y="152" width="220" height="30" rx="4"/><text x="260" y="165" text-anchor="middle" class="t">5 · Judge qwen3.5:9b</text><text x="260" y="176" text-anchor="middle" class="ts">8-factor + winner · blind · reasoning off</text>
+        <rect class="b" x="40" y="208" width="140" height="30" rx="4"/><text x="110" y="221" text-anchor="middle" class="t">Wikipedia</text><text x="110" y="232" text-anchor="middle" class="ts">relevance-gated</text>
+        <rect class="b" x="190" y="208" width="140" height="30" rx="4"/><text x="260" y="221" text-anchor="middle" class="t">Weighted score</text><text x="260" y="232" text-anchor="middle" class="ts">6 signals → 0–1</text>
+        <rect class="b" x="340" y="208" width="140" height="30" rx="4"/><text x="410" y="221" text-anchor="middle" class="t">Wikidata</text><text x="410" y="232" text-anchor="middle" class="ts">entity-gated</text>
+        <rect class="ba" x="175" y="252" width="170" height="26" rx="4"/><text x="260" y="268" text-anchor="middle" class="t">6 · Combiner → Final</text>
+      </svg>
+      <div class="cap">Fig. 1 — Six-stage pipeline. Answer order is coin-flipped per question and evaluators are brand-blind.</div>
+    </div>
+
+    <h3 class="sub">A. Confidence signal and gate</h3>
+    <p>Six signals are combined into a single 0–1 confidence score for the winning answer (Table&nbsp;I). Any signal unavailable for a question — most often an external source with no relevant match — has its weight redistributed proportionally over the rest, so the score remains well-defined rather than penalising the answer for a missing lookup. If the score falls below the threshold&nbsp;<code>&tau;=0.75</code>, both answers are regenerated from scratch, up to two retries (three attempts total), after which the highest-scoring attempt is shipped.</p>
+
+    <figure class="tbl span">
+      <figcaption><b>Table I.</b> Confidence-score signal weights (renormalized over available signals)</figcaption>
+      <table class="small">
+        <thead><tr><th>Signal</th><th class="num">Weight</th><th>Source / definition</th></tr></thead>
+        <tbody>
+          <tr><td>Judge rubric total</td><td class="num">0.40</td><td>qwen3.5:9b 8-factor total / 80</td></tr>
+          <tr><td>Semantic similarity</td><td class="num">0.15</td><td>cosine(answer, question), Sentence-BERT</td></tr>
+          <tr><td>Wikipedia fact-check</td><td class="num">0.15</td><td>cosine(answer, article summary), gated</td></tr>
+          <tr><td>Model agreement</td><td class="num">0.10</td><td>BERTScore(answer&#8321;, answer&#8322;)</td></tr>
+          <tr><td>Verifier–Judge agreement</td><td class="num">0.10</td><td>1 − normalized |total diff|</td></tr>
+          <tr><td>Wikidata fact-check</td><td class="num">0.10</td><td>cosine(answer, entity description), gated</td></tr>
+        </tbody>
+      </table>
+    </figure>
+
+    <h3 class="sub">B. External corroboration sources</h3>
+    <p>Both fact-checks query the live public APIs of the official sites, with no API key. Wikipedia uses the English MediaWiki search API (<code>en.wikipedia.org/w/api.php</code>) to locate the most relevant article and the REST summary endpoint for its lead paragraph; the answer is scored by cosine similarity to that summary. Wikidata uses entity label search (<code>wbsearchentities</code>) over proper-noun candidates extracted from the answer, scoring against the matched entity's structured description. Critically, both apply a <em>relevance gate</em>: if the question–source similarity is below 0.35, the match is discarded and the signal abstains rather than injecting an unrelated source as evidence. This is why external coverage is deliberately partial (Wikipedia 53.9%, Wikidata 40.6% of questions) — many compound analytical questions have no dedicated encyclopedic entry, and a forced match would add noise, not signal.</p>
+
+    <h2 class="sec"><span class="n">IV.</span>Methodology: Validation Without Labels</h2>
+    <p>With no correctness labels, "better" cannot mean "more accurate against a target." We instead adopt two families of label-free objective, each of which can <em>fail</em> — the property that makes them genuine tests rather than assumptions.</p>
+    <p class="ni"><b>Discrimination.</b> A usable evaluator must score a deliberately broken answer far below a solid one on the same question. Constructed adversarial pairs give a direct, label-free floor on evaluator quality.</p>
+    <p class="ni"><b>Internal consistency and regeneration validity.</b> Signals that measure a shared latent "quality" should predict one another; a weighting under which they do not is capturing noise. And a meaningful confidence threshold should trigger regeneration mainly when a second attempt genuinely improves the answer on <em>independent</em> signals (the judge excluded, to avoid circularity).</p>
+    <p class="ni">Two bias controls are built into data generation. First, the physical assignment of each model to the "Answer&nbsp;1"/"Answer&nbsp;2" slot is randomized per question by a coin flip, and all brand identifiers are stripped from evaluator prompts, so neither position nor identity can leak into a score; the true model behind each slot is recorded separately for later attribution. Second, whenever the judge model or scoring standard changed during development, the dataset was restarted from scratch — mixing two labelling regimes teaches any downstream analysis to average two disagreeing standards, an error made once early and never repeated.</p>
+
+    <h2 class="sec"><span class="n">V.</span>Experimental Setup</h2>
+    <p>All models run locally through Ollama on a single NVIDIA RTX&nbsp;4090 (24&nbsp;GB). Because four distinct 6–9&nbsp;GB models must be resident across a question, concurrency is fixed at one to avoid VRAM over-subscription; this also improved per-question latency by removing contention. The question bank comprises open-ended, compound technical prompts (e.g. "compare and contrast…", "walk through the failure modes of…") across science, engineering, finance, and computing. The final corpus contains <b>5,000 questions</b> and <b>8,432 logged attempts</b>; every attempt stores all raw per-criterion scores and signal values, so any weighting or threshold can be recomputed post hoc without regenerating data. Retrieval uses the <code>all-MiniLM-L6-v2</code> sentence encoder with a 0.35 relevance floor.</p>
+
+    <h2 class="sec"><span class="n">VI.</span>Results</h2>
+
+    <h3 class="sub">A. Judge selection by per-criterion variance</h3>
+    <p>Three judge models were compared on 40 blind evaluations each. Mean score alone was misleading: the strongest-averaging open candidate, CompassJudger-1, assigned all eight rubric criteria an <em>identical</em> value on 57.5% of items — fluent boilerplate around a single number, contributing no per-criterion information. qwen3.5:9b never produced a flat score (Table&nbsp;II). Selection on this "flat-rate" diagnostic, invisible to totals-only comparison, was decisive.</p>
+
+    <figure class="tbl span">
+      <figcaption><b>Table II.</b> Judge model comparison (N=40 blind evaluations each)</figcaption>
+      <table>
+        <thead><tr><th>Judge model</th><th class="num">Mean / 80</th><th class="num">Flat-rate</th><th>Outcome</th></tr></thead>
+        <tbody>
+          <tr><td>qwen2.5</td><td class="num">71.9</td><td class="num">—</td><td>Ceiling-hugging bias</td></tr>
+          <tr><td>CompassJudger-1-7B</td><td class="num">69.3</td><td class="num">57.5%</td><td>No per-criterion analysis</td></tr>
+          <tr class="hl"><td>qwen3.5:9b (reasoning off)</td><td class="num">65.5</td><td class="num">0.0%</td><td>Adopted</td></tr>
+        </tbody>
+        <caption>Flat-rate = fraction of items scoring all eight criteria identically. qwen3.5:9b required its internal reasoning mode disabled, which otherwise consumed the entire generation budget before emitting scores.</caption>
+      </table>
+    </figure>
+
+    <h3 class="sub">B. A hidden coupling between the two evaluators</h3>
+    <p>An audit found the Judge's eight scores identical to the Verifier's, digit-for-digit, on 32 of 37 questions. The Judge's prompt had been supplied the Verifier's numeric scores as "context," and at low temperature it reproduced them rather than forming an independent view — collapsing the "second opinion" signal into a copy. Removing the Verifier's output from the Judge's prompt restored genuine independence, after which Verifier–Judge agreement became a real, varying signal.</p>
+
+    <h3 class="sub">C. Position and identity bias</h3>
+    <p>Before the bias controls, one model was always shown first and prompts named the brands, confounding position and identity with quality throughout the early data. Measured on the final bias-controlled corpus, win-rate by raw slot is strongly skewed, but win-rate by <em>true model identity</em> is far closer to even (Table&nbsp;III) — direct evidence that most of the apparent gap was an artefact of ordering, with a residual tendency to favour whichever answer is read second sitting atop a modest genuine difference.</p>
+
+    <figure class="tbl span">
+      <figcaption><b>Table III.</b> Win-rate: raw position vs. true model identity (n=5,000 final answers)</figcaption>
+      <table>
+        <thead><tr><th>Attribution</th><th class="num">A / LLaMA 3</th><th class="num">B / Mistral</th></tr></thead>
+        <tbody>
+          <tr><td>By raw slot (artefact)</td><td class="num">33.1%</td><td class="num">66.9%</td></tr>
+          <tr class="hl"><td>By true model identity</td><td class="num">43.0%</td><td class="num">57.0%</td></tr>
+        </tbody>
+        <caption>The gap nearly halves once position and identity are disentangled by the per-question randomization.</caption>
+      </table>
+    </figure>
+
+    <h3 class="sub">D. Threshold calibration under censored data</h3>
+    <p>Calibrating the regeneration threshold is complicated by censoring: a second attempt is only ever generated <em>below</em> the threshold, so the data above it is unobserved. We introduced a control group — a random fraction of already-passing answers receive a research-only retry — supplying unbiased retry-improvement data across the full score range. Three independent methods concur (Table&nbsp;IV): a two-proportion z-test on adjacent score bands, an ROC/Youden's&nbsp;J optimal-cutoff analysis with inverse-probability sampling correction, and a 2,000-sample bootstrap. The threshold&nbsp;0.75 lies inside the bootstrap 95% interval on a broad near-optimal plateau.</p>
+
+    <figure class="tbl span">
+      <figcaption><b>Table IV.</b> Threshold calibration — three independent estimators</figcaption>
+      <table>
+        <thead><tr><th>Method</th><th>Estimate for &tau;</th></tr></thead>
+        <tbody>
+          <tr><td>Two-proportion z-test (band contrast)</td><td>drop-off significant, p = 0.011</td></tr>
+          <tr><td>ROC / Youden's J (sampling-corrected)</td><td>optimum 0.70–0.74, AUC 0.63</td></tr>
+          <tr class="hl"><td>Bootstrap (2,000 resamples)</td><td>95% CI [0.69, 0.75]</td></tr>
+        </tbody>
+        <caption>Re-run on the complete dataset. τ = 0.75 adopted; the near-flat J plateau across 0.69–0.75 means the choice is robust rather than knife-edge.</caption>
+      </table>
+    </figure>
+
+    <p>Under &tau;=0.75, the shipped answers have a mean confidence of 0.734 (SD 0.044; range 0.451–0.856). Notably, 63.3% of final answers ship below&nbsp;&tau;: with a fixed three-attempt cap, "threshold" means "try up to three times to reach 0.75, then ship the best," not a hard guarantee — a property we surface explicitly rather than obscure.</p>
+
+    <h3 class="sub">E. Is the model-identity gap real? Verifier discrimination</h3>
+    <p>The Judge rates Mistral higher specifically on factual criteria, yet the independent Verifier shows no gap between the two generators on any criterion. To distinguish "no real difference" from "insensitive instrument," we applied the discrimination test to the Verifier: on constructed pairs it scored solid answers 77–80/80 against deliberately broken ones at 0–8/80 (mean gap 74.5). The Verifier is therefore demonstrably capable of detecting real quality gaps, which shifts the balance of evidence toward the residual Mistral preference being a judge-specific perception rather than a verified quality advantage. We report this as an open question, not a settled claim.</p>
+
+    <h2 class="sec"><span class="n">VII.</span>Discussion</h2>
+    <p>A recurring theme is that aggregate statistics conceal the failures that matter: a competitive mean hid a non-discriminating judge; similar Verifier–Judge scores hid a copy, not a consensus; a plausible win-rate hid a position artefact. Each was exposed only by looking one level below the summary — at per-criterion variance, at digit-level identity, at position-versus-identity decomposition. For evaluation systems without ground truth, we argue this "look below the aggregate" discipline is not optional polish but the primary source of validity.</p>
+    <p class="ni">Equally, three analysis errors were caught and corrected before being reported: a model's self-reported rubric total that disagreed with its own criterion scores (now always recomputed); an ostensibly independent "second-opinion" signal that was mathematically derived from the judge and inflated a consistency metric (excluded from the search); and a threshold analysis that under-counted control samples after a mid-run change in sampling rate (re-weighted by the rate actually in force). Each surfaced because a result looked "too clean." We contend that a transparent self-correction record is the strongest available evidence of trustworthiness precisely when external ground truth is absent.</p>
+
+    <h2 class="sec"><span class="n">VIII.</span>Limitations</h2>
+    <p>The system measures self-consistency and external corroboration, not verified correctness; no result is validated against a human answer key. The Mistral-versus-LLaMA&nbsp;3 question remains open pending per-answer human fact-checking, for which a blind, balanced rating harness is released but not yet completed. The Verifier (phi3) was never swapped and clusters near the score ceiling on ordinary answers, so it has not received the model-comparison scrutiny the Judge did. The relevance and retrieval gates (all 0.35) were validated only as "not obviously broken" by a blind spot-check, not proven optimal. Finally, all findings are specific to this model set, rubric, and question bank; transfer to other settings is expected in method but not in tuned values, and is untested.</p>
+
+    <h2 class="sec"><span class="n">IX.</span>Conclusion and Future Work</h2>
+    <p>We presented an agentic multi-LLM system that establishes trust in its own answers through blind, bias-controlled, independently corroborated evaluation, and a label-free methodology for validating every part of it without a ground-truth answer key. The contribution is a reusable protocol — discrimination testing, bias decomposition, and control-group calibration — evidenced at scale on a released 5,000-question dataset, and a candid account of the measurement errors that discipline caught. Future work is a small human-labelled study to convert the system's self-consistent claims into verified ones, subjecting the Verifier to the same scrutiny as the Judge, and calibrating the retrieval gate against logged real-world usage now that instrumentation is in place.</p>
+
+    <div class="refs">
+      <h2>References</h2>
+      <ol class="reflist">
+        <li>L. Zheng <i>et al.</i>, "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena," in <i>Proc. NeurIPS</i>, 2023.</li>
+        <li>P. Wang <i>et al.</i>, "Large Language Models are not Fair Evaluators," in <i>Proc. ACL</i>, 2024. arXiv:2305.17926.</li>
+        <li>T. Zhang, V. Kishore, F. Wu, K. Q. Weinberger, and Y. Artzi, "BERTScore: Evaluating Text Generation with BERT," in <i>Proc. ICLR</i>, 2020.</li>
+        <li>N. Reimers and I. Gurevych, "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks," in <i>Proc. EMNLP-IJCNLP</i>, 2019.</li>
+        <li>P. Lewis <i>et al.</i>, "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks," in <i>Proc. NeurIPS</i>, 2020.</li>
+        <li>X. Wang <i>et al.</i>, "Self-Consistency Improves Chain of Thought Reasoning in Language Models," in <i>Proc. ICLR</i>, 2023.</li>
+        <li>S. Kim <i>et al.</i>, "Prometheus: Inducing Fine-grained Evaluation Capability in Language Models," in <i>Proc. ICLR</i>, 2024.</li>
+        <li>W. J. Youden, "Index for rating diagnostic tests," <i>Cancer</i>, vol. 3, no. 1, pp. 32–35, 1950.</li>
+        <li>E. B. Wilson, "Probable inference, the law of succession, and statistical inference," <i>J. Amer. Statist. Assoc.</i>, vol. 22, no. 158, pp. 209–212, 1927.</li>
+        <li>A. Q. Jiang <i>et al.</i>, "Mistral 7B," arXiv:2310.06825, 2023.</li>
+        <li>AI@Meta, "The Llama 3 Herd of Models," arXiv:2407.21783, 2024.</li>
+        <li>Ollama, "Ollama: Run large language models locally," software, 2024. [Online]. Available: https://ollama.com</li>
+      </ol>
+    </div>
+
+    <div class="footer-note">
+      Manuscript compiled from a 35-entry engineering research log. Source, dataset, and full experimental record: github.com/Swaroop192005/V2_Agentic_LLM_System. Author name and affiliation are placeholders inferred from the repository; correct before submission.
+    </div>
+
+  </div>
+</div>
