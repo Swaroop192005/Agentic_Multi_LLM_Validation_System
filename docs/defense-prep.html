@@ -141,7 +141,7 @@
     <div class="fstep"><div class="fn">2</div><div class="fbody"><b>A verifier scores both, blind</b><span>phi3 rates each answer on eight rubric criteria — factual correctness, faithfulness, hallucination-freedom, and so on — without knowing which model wrote it.</span></div></div>
     <div class="fstep"><div class="fn">3</div><div class="fbody"><b>A separate judge scores again and picks a winner</b><span>qwen3.5:9b does the same eight-factor scoring completely independently, then declares a winner — the two independent evaluations let me measure whether they agree.</span></div></div>
     <div class="fstep"><div class="fn">4</div><div class="fbody"><b>Three external checks corroborate</b><span>Cross-model agreement, plus live Wikipedia and Wikidata lookups, both gated so an irrelevant source is never trusted.</span></div></div>
-    <div class="fstep"><div class="fn">5</div><div class="fbody"><b>Six signals become one confidence score</b><span>A weighted blend, no single signal dominating, produces a 0–1 confidence — and if it's below 0.75, the whole thing regenerates.</span></div></div>
+    <div class="fstep"><div class="fn">5</div><div class="fbody"><b>Six signals become one confidence score</b><span>A weighted blend, no single signal dominating, produces a 0–1 confidence — and if it's below 0.72, the whole thing regenerates.</span></div></div>
     <div class="fstep"><div class="fn">6</div><div class="fbody"><b>A combiner writes the final answer</b><span>The best attempt is synthesised into the answer that ships — and every raw signal from every attempt is logged for analysis.</span></div></div>
   </div>
 </section>
@@ -154,7 +154,7 @@
   <div class="numbers">
     <div class="nchip"><div class="v">5,000</div><div class="k">questions, one consistent regime</div></div>
     <div class="nchip"><div class="v">8,432</div><div class="k">total attempts logged</div></div>
-    <div class="nchip"><div class="v">0.75</div><div class="k">confidence threshold, CI [0.69, 0.75]</div></div>
+    <div class="nchip"><div class="v">0.72</div><div class="k">confidence threshold, CI [0.69, 0.75]</div></div>
     <div class="nchip"><div class="v">0%</div><div class="k">judge flat-rate (vs 57.5% for the rejected model)</div></div>
     <div class="nchip"><div class="v">55.3%</div><div class="k">Mistral win-rate by true identity</div></div>
     <div class="nchip"><div class="v">74.5</div><div class="k">verifier discrimination gap /80 (solid vs broken)</div></div>
@@ -191,8 +191,8 @@
 
     <div class="qcard">
       <span class="tag">Statistics · likely</span>
-      <div class="q"><span class="mark">Q4</span>Why 0.75 for the threshold? Isn't that arbitrary?</div>
-      <div class="a"><span class="lead-in">Lead:</span> "Three independent methods agree on it." <strong>Backup:</strong> The problem was censored data — you only ever see retries below the threshold. I added a control group: a random fraction of already-passing answers get a retry too, purely to measure them. Then a z-test (p=0.011), an ROC/Youden's-J analysis, and a 2,000-sample bootstrap all landed on a 0.69–0.75 optimal range. 0.75 sits inside it, on a broad plateau — not a knife-edge guess.</div>
+      <div class="q"><span class="mark">Q4</span>Why 0.72 for the threshold? Isn't that arbitrary?</div>
+      <div class="a"><span class="lead-in">Lead:</span> "Three independent methods agree on it." <strong>Backup:</strong> The problem was censored data — you only ever see retries below the threshold. I added a control group: a random fraction of already-passing answers get a retry too, purely to measure them. Then a z-test (p=0.011), an ROC/Youden's-J analysis, and a 2,000-sample bootstrap all landed on a 0.69–0.75 optimal range. I adopted 0.72 — the bootstrap-median optimum — which sits right in the middle of that plateau, not a knife-edge guess.</div>
     </div>
 
     <div class="qcard">

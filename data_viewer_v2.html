@@ -250,7 +250,7 @@ async function poll() {
         const trueWinnerModel = r.winner === 'A' ? r.model_a : r.model_b;
         const winClass = trueWinnerModel === 'mistral' ? 'win-mistral' : 'win-llama3';
         const winName = trueWinnerModel === 'mistral' ? 'Mistral' : 'LLaMA 3';
-        const scoreClass = (r.weighted_score ?? 0) >= 0.75 ? 'score-ok' : 'score-low';
+        const scoreClass = (r.weighted_score ?? 0) >= 0.72 ? 'score-ok' : 'score-low';
         const attemptClass = r.attempt_number > 1 ? 'attempt-badge regen' : 'attempt-badge';
         // Shows "2/3" (kept attempt / total tried) rather than just "#2" -
         // a bare attempt number hides that a later, discarded attempt was
@@ -282,7 +282,7 @@ function browseRowHtml(r) {
   const trueWinnerModel = r.winner === 'A' ? r.model_a : r.model_b;
   const winClass = trueWinnerModel === 'mistral' ? 'win-mistral' : 'win-llama3';
   const winName = trueWinnerModel === 'mistral' ? 'Mistral' : 'LLaMA 3';
-  const scoreClass = (r.weighted_score ?? 0) >= 0.75 ? 'score-ok' : 'score-low';
+  const scoreClass = (r.weighted_score ?? 0) >= 0.72 ? 'score-ok' : 'score-low';
   const attemptClass = r.attempt_number > 1 ? 'attempt-badge regen' : 'attempt-badge';
   const attemptLabel = r.total_attempts > 1 ? `${r.attempt_number}/${r.total_attempts}` : `#${r.attempt_number}`;
   return `<tr class="row-clickable" data-id="${r.id}">
