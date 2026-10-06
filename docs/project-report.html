@@ -195,14 +195,14 @@
   <div class="abstract">
     <p class="lead">This project builds a six-stage agentic pipeline that answers open-ended technical questions and validates the answer without any human-labelled ground truth. Two independent models generate candidate answers; two further models score them on a shared eight-factor rubric; three external checks corroborate the winner; and a weighted confidence score decides whether the answer ships or is regenerated.</p>
     <p>The central research problem is that <b>none of the usual quality metrics apply</b>: there is no "correct answer" label anywhere in the data, so every design choice — which judge model, what rubric, which signals, what confidence threshold — had to be justified by <i>internal, label-free evidence</i> rather than accuracy against a target. The project's real contribution is the method for doing that credibly, and a running record of catching its own measurement errors before they became conclusions.</p>
-    <p>The completed dataset spans 5,000 questions under one consistent, bias-corrected regime. Key results: a judge model selected on per-criterion discrimination (not just score averages); position and model-identity bias identified and eliminated; and a regeneration threshold of 0.75 that three independent statistical methods agree is well-calibrated.</p>
+    <p>The completed dataset spans 5,000 questions under one consistent, bias-corrected regime. Key results: a judge model selected on per-criterion discrimination (not just score averages); position and model-identity bias identified and eliminated; and a regeneration threshold of 0.72 (the bootstrap-median optimum) that three independent statistical methods agree is well-calibrated.</p>
   </div>
 
   <div class="tiles">
     <div class="tile"><div class="big">5,000</div><div class="cap">Questions, single consistent regime</div></div>
     <div class="tile"><div class="big">6</div><div class="cap">Pipeline stages, fully instrumented</div></div>
     <div class="tile"><div class="big">3</div><div class="cap">Judge models evaluated before selection</div></div>
-    <div class="tile"><div class="big">0.75</div><div class="cap">Confidence threshold, statistically proven</div></div>
+    <div class="tile"><div class="big">0.72</div><div class="cap">Confidence threshold, statistically proven</div></div>
   </div>
 </section>
 
@@ -229,7 +229,7 @@
   </div>
 
   <div class="diagram-card">
-    <svg viewBox="0 0 620 760" role="img" aria-label="Pipeline: user question splits to LLaMA 3 and Mistral generation, then blind Verifier and Judge evaluation, three external checks, a weighted confidence score, a 0.75 decision gate with a regeneration loop, and a combiner producing the final answer.">
+    <svg viewBox="0 0 620 760" role="img" aria-label="Pipeline: user question splits to LLaMA 3 and Mistral generation, then blind Verifier and Judge evaluation, three external checks, a weighted confidence score, a 0.72 decision gate with a regeneration loop, and a combiner producing the final answer.">
       <defs>
         <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--border-strong)"></path></marker>
         <marker id="arR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--rust)"></path></marker>
@@ -266,7 +266,7 @@
       <g class="dn"><rect x="225" y="384" width="170" height="52" rx="11"></rect><text x="310" y="405" text-anchor="middle" class="t">Wikipedia</text><text x="310" y="423" text-anchor="middle" class="s">relevance-gated</text></g>
       <g class="dn"><rect x="415" y="384" width="170" height="52" rx="11"></rect><text x="500" y="405" text-anchor="middle" class="t">Wikidata</text><text x="500" y="423" text-anchor="middle" class="s">entity match, gated</text></g>
       <g class="dn"><rect x="165" y="472" width="290" height="52" rx="11"></rect><text x="310" y="493" text-anchor="middle" class="t">Weighted Confidence</text><text x="310" y="511" text-anchor="middle" class="s">6 signals → one 0–1 score</text></g>
-      <g><polygon points="310,556 410,602 310,648 210,602" fill="var(--gold-wash)" stroke="var(--gold)" stroke-width="1.8"></polygon><text x="310" y="598" text-anchor="middle" class="mono" font-size="12.5" font-weight="600" fill="var(--ink)">score ≥</text><text x="310" y="614" text-anchor="middle" class="mono" font-size="12.5" font-weight="600" fill="var(--ink)">0.75 ?</text></g>
+      <g><polygon points="310,556 410,602 310,648 210,602" fill="var(--gold-wash)" stroke="var(--gold)" stroke-width="1.8"></polygon><text x="310" y="598" text-anchor="middle" class="mono" font-size="12.5" font-weight="600" fill="var(--ink)">score ≥</text><text x="310" y="614" text-anchor="middle" class="mono" font-size="12.5" font-weight="600" fill="var(--ink)">0.72 ?</text></g>
       <g class="dn"><rect x="185" y="680" width="250" height="48" rx="11"></rect><text x="310" y="700" text-anchor="middle" class="t">Combiner → Final Answer</text><text x="310" y="717" text-anchor="middle" class="s">synthesised from the best attempt</text></g>
     </svg>
   </div>
@@ -358,12 +358,12 @@
         <tbody>
           <tr><td>Two-proportion z-test (score bands)</td><td>p = 0.011 — the improvement drop-off is real</td></tr>
           <tr><td>ROC / Youden's J (sampling-corrected)</td><td>optimal cutoff 0.70–0.74, AUC 0.63</td></tr>
-          <tr class="hl"><td>2,000-sample bootstrap</td><td>95% CI [0.69, 0.75] — 0.75 confirmed in-range</td></tr>
+          <tr class="hl"><td>2,000-sample bootstrap</td><td>median 0.72; 95% CI [0.69, 0.75]</td></tr>
         </tbody>
-        <caption>Re-run against the complete 5,000-question dataset. 0.75 sits inside the confidence interval on a broad near-optimal plateau.</caption>
+        <caption>Re-run against the complete 5,000-question dataset. 0.72 (the bootstrap median) sits inside the confidence interval on a broad near-optimal plateau.</caption>
       </table>
     </div>
-    <div class="verdict">Threshold = 0.75, raised from an initial 0.68 and validated at completion scale</div>
+    <div class="verdict">Threshold = 0.72 (bootstrap-median optimum), validated at completion scale</div>
   </div>
 
   <div class="phase">

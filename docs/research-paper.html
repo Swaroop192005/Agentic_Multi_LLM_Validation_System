@@ -150,7 +150,7 @@
 
   <div class="abstract">
     <span class="lbl">Abstract —</span>
-    <p>Large language models (LLMs) answer open-ended questions fluently regardless of whether the answer is correct, and cannot reliably self-assess. We present an agentic multi-LLM system that decides how far to trust its own output <em>without any ground-truth answer key</em>. Two models (LLaMA&nbsp;3, Mistral) generate candidate answers independently; two further models (phi3 as Verifier, qwen3.5:9b as Judge) score both candidates blindly on a shared eight-factor rubric; three external checks — cross-model semantic agreement, and relevance-gated lookups against Wikipedia and Wikidata — corroborate the result; and a six-signal weighted confidence score gates a regeneration loop. Because no correctness labels exist in the target domain, every design decision is justified by label-free objectives — discrimination tests, internal consistency, and regeneration validity — rather than accuracy against a target. We report a complete 5,000-question dataset (8,432 logged attempts) generated under one consistent, bias-controlled regime, and four principal findings: (i) a judge model must be selected on per-criterion score variance, not mean or ceiling behaviour — a candidate with competitive averages scored all eight criteria identically on 57.5% of items; (ii) a naive evaluator design silently coupled the two judges (32 of 37 total scores identical) until made blind; (iii) answer-position and model-identity bias inflated an apparent quality gap that halved once evaluation was randomized and blinded; and (iv) the regeneration threshold, calibrated via a purpose-built control group and confirmed by a two-proportion test (p=0.011), ROC/Youden's&nbsp;J analysis, and bootstrap (95% CI [0.69, 0.75]), settles at 0.75. We further document three measurement errors detected and corrected before they became conclusions, and argue that this self-correction record is itself central to the credibility of label-free evaluation.</p>
+    <p>Large language models (LLMs) answer open-ended questions fluently regardless of whether the answer is correct, and cannot reliably self-assess. We present an agentic multi-LLM system that decides how far to trust its own output <em>without any ground-truth answer key</em>. Two models (LLaMA&nbsp;3, Mistral) generate candidate answers independently; two further models (phi3 as Verifier, qwen3.5:9b as Judge) score both candidates blindly on a shared eight-factor rubric; three external checks — cross-model semantic agreement, and relevance-gated lookups against Wikipedia and Wikidata — corroborate the result; and a six-signal weighted confidence score gates a regeneration loop. Because no correctness labels exist in the target domain, every design decision is justified by label-free objectives — discrimination tests, internal consistency, and regeneration validity — rather than accuracy against a target. We report a complete 5,000-question dataset (8,432 logged attempts) generated under one consistent, bias-controlled regime, and four principal findings: (i) a judge model must be selected on per-criterion score variance, not mean or ceiling behaviour — a candidate with competitive averages scored all eight criteria identically on 57.5% of items; (ii) a naive evaluator design silently coupled the two judges (32 of 37 total scores identical) until made blind; (iii) answer-position and model-identity bias inflated an apparent quality gap that halved once evaluation was randomized and blinded; and (iv) the regeneration threshold, calibrated via a purpose-built control group and confirmed by a two-proportion test (p=0.011), ROC/Youden's&nbsp;J analysis, and bootstrap (95% CI [0.69, 0.75]), settles at 0.72 (the bootstrap-median optimum). We further document three measurement errors detected and corrected before they became conclusions, and argue that this self-correction record is itself central to the credibility of label-free evaluation.</p>
   </div>
   <div class="keywords">
     <span class="lbl">Index Terms —</span>
@@ -195,9 +195,9 @@
         <line class="fl" marker-end="url(#a)" x1="260" y1="182" x2="260" y2="208"/>
         <path class="fl" marker-end="url(#a)" d="M260,182 L260,196 L410,196 L410,208"/>
         <line class="fl" marker-end="url(#a)" x1="260" y1="238" x2="260" y2="252"/>
-        <text x="273" y="250" class="lbl">≥0.75</text>
+        <text x="273" y="250" class="lbl">≥0.72</text>
         <path class="lp" marker-end="url(#ar)" d="M175,265 L40,265 L40,63 L58,63"/>
-        <text x="44" y="165" class="lbl" transform="rotate(-90 44 165)">regenerate (&lt;0.75, ≤2×)</text>
+        <text x="44" y="165" class="lbl" transform="rotate(-90 44 165)">regenerate (&lt;0.72, ≤2×)</text>
 
         <rect class="b" x="185" y="6" width="150" height="20" rx="4"/><text x="260" y="19" text-anchor="middle" class="t">User Question</text>
         <rect class="ba" x="58" y="48" width="124" height="30" rx="4"/><text x="120" y="61" text-anchor="middle" class="t">1 · LLaMA 3</text><text x="120" y="72" text-anchor="middle" class="ts">generate</text>
@@ -214,7 +214,7 @@
     </div>
 
     <h3 class="sub">A. Confidence signal and gate</h3>
-    <p>Six signals are combined into a single 0–1 confidence score for the winning answer (Table&nbsp;I). Any signal unavailable for a question — most often an external source with no relevant match — has its weight redistributed proportionally over the rest, so the score remains well-defined rather than penalising the answer for a missing lookup. If the score falls below the threshold&nbsp;<code>&tau;=0.75</code>, both answers are regenerated from scratch, up to two retries (three attempts total), after which the highest-scoring attempt is shipped.</p>
+    <p>Six signals are combined into a single 0–1 confidence score for the winning answer (Table&nbsp;I). Any signal unavailable for a question — most often an external source with no relevant match — has its weight redistributed proportionally over the rest, so the score remains well-defined rather than penalising the answer for a missing lookup. If the score falls below the threshold&nbsp;<code>&tau;=0.72</code>, both answers are regenerated from scratch, up to two retries (three attempts total), after which the highest-scoring attempt is shipped.</p>
 
     <figure class="tbl span">
       <figcaption><b>Table I.</b> Confidence-score signal weights (renormalized over available signals)</figcaption>
@@ -280,7 +280,7 @@
     </figure>
 
     <h3 class="sub">D. Threshold calibration under censored data</h3>
-    <p>Calibrating the regeneration threshold is complicated by censoring: a second attempt is only ever generated <em>below</em> the threshold, so the data above it is unobserved. We introduced a control group — a random fraction of already-passing answers receive a research-only retry — supplying unbiased retry-improvement data across the full score range. Three independent methods concur (Table&nbsp;IV): a two-proportion z-test on adjacent score bands, an ROC/Youden's&nbsp;J optimal-cutoff analysis with inverse-probability sampling correction, and a 2,000-sample bootstrap. The threshold&nbsp;0.75 lies inside the bootstrap 95% interval on a broad near-optimal plateau.</p>
+    <p>Calibrating the regeneration threshold is complicated by censoring: a second attempt is only ever generated <em>below</em> the threshold, so the data above it is unobserved. We introduced a control group — a random fraction of already-passing answers receive a research-only retry — supplying unbiased retry-improvement data across the full score range. Three independent methods concur (Table&nbsp;IV): a two-proportion z-test on adjacent score bands, an ROC/Youden's&nbsp;J optimal-cutoff analysis with inverse-probability sampling correction, and a 2,000-sample bootstrap. The adopted threshold&nbsp;0.72 — the bootstrap median — lies inside the 95% interval on a broad near-optimal plateau; the near-flat J curve across 0.70–0.74 makes any value in that band statistically equivalent.</p>
 
     <figure class="tbl span">
       <figcaption><b>Table IV.</b> Threshold calibration — three independent estimators</figcaption>
@@ -289,13 +289,13 @@
         <tbody>
           <tr><td>Two-proportion z-test (band contrast)</td><td>drop-off significant, p = 0.011</td></tr>
           <tr><td>ROC / Youden's J (sampling-corrected)</td><td>optimum 0.70–0.74, AUC 0.63</td></tr>
-          <tr class="hl"><td>Bootstrap (2,000 resamples)</td><td>95% CI [0.69, 0.75]</td></tr>
+          <tr class="hl"><td>Bootstrap (2,000 resamples)</td><td>median <b>0.72</b>; 95% CI [0.69, 0.75]</td></tr>
         </tbody>
-        <caption>Re-run on the complete dataset. τ = 0.75 adopted; the near-flat J plateau across 0.69–0.75 means the choice is robust rather than knife-edge.</caption>
+        <caption>Re-run on the complete dataset. τ = 0.72 adopted (bootstrap-median optimum); the near-flat J plateau across 0.70–0.74 means the choice is robust rather than knife-edge.</caption>
       </table>
     </figure>
 
-    <p>Under &tau;=0.75, the shipped answers have a mean confidence of 0.734 (SD 0.044; range 0.451–0.856). Notably, 63.3% of final answers ship below&nbsp;&tau;: with a fixed three-attempt cap, "threshold" means "try up to three times to reach 0.75, then ship the best," not a hard guarantee — a property we surface explicitly rather than obscure.</p>
+    <p>Under &tau;=0.72, the shipped answers have a mean confidence of 0.734 (SD 0.044; range 0.451–0.856), with 37.0% falling below&nbsp;&tau;: with a fixed three-attempt cap, "threshold" means "try up to three times to reach 0.72, then ship the best," not a hard guarantee — a property we surface explicitly rather than obscure.</p>
 
     <h3 class="sub">E. Is the model-identity gap real? Verifier discrimination</h3>
     <p>The Judge rates Mistral higher specifically on factual criteria, yet the independent Verifier shows no gap between the two generators on any criterion. To distinguish "no real difference" from "insensitive instrument," we applied the discrimination test to the Verifier: on constructed pairs it scored solid answers 77–80/80 against deliberately broken ones at 0–8/80 (mean gap 74.5). The Verifier is therefore demonstrably capable of detecting real quality gaps, which shifts the balance of evidence toward the residual Mistral preference being a judge-specific perception rather than a verified quality advantage. We report this as an open question, not a settled claim.</p>

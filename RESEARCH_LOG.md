@@ -1441,4 +1441,34 @@ defensible FYP on their own; the ground-truth study is the one piece of
 real accuracy that would let the project make a verified (not just
 self-consistent) claim, and its harness is ready for human raters.
 
+## 36. Threshold lowered 0.75 -> 0.72: the bootstrap-median optimum
+
+Revisited the deployed threshold after re-running `training/optimal_threshold_roc.py`
+on the complete 5000-question dataset (identical result to Section 34): ROC/Youden's-J
+point optimum **t = 0.70** (AUC 0.629), 2000-resample bootstrap **median 0.72,
+mode 0.70, 95% CI [0.69, 0.75]**, two-proportion test p = 0.011. The J curve is
+near-flat across 0.70-0.74 (J ~ 0.17-0.19, with tiny non-monotonic wiggle), so any
+value in that band is statistically interchangeable.
+
+Section 24/34 had adopted **0.75** as a deliberate *recall-first* choice (sensitivity
+86.7% / specificity 30.2% - catch most improvable answers, accept many wasted
+regenerations). On reflection that sits at the very top edge of the CI, not its
+centre. Switched `DEFAULT_THRESHOLD` to **0.72** - the bootstrap-median optimum and
+a balanced middle ground:
+
+| t | sensitivity | specificity | Youden J | character |
+|---|---|---|---|---|
+| 0.70 | 54.6% | 64.4% | 0.190 | Youden point optimum (balanced) |
+| **0.72** | **66.7%** | **50.3%** | **0.170** | **bootstrap median - adopted** |
+| 0.75 | 86.7% | 30.2% | 0.169 | former recall-first value |
+
+Descriptive effect on the final score distribution: at 0.72, 37.0% of the 5000 final
+answers fall below the bar (vs 63.3% at 0.75) - mean final confidence is 0.734
+regardless (a fixed property of the data). The dataset is complete and immutable, so
+this only affects the live demo and any future generation run; no data was
+regenerated. Updated `utils/scoring.py`, restarted `server.py`, and synced the value
+and its justification through `docs/research-paper.{html,pdf}` and
+`docs/project-report.{html,pdf}`. (The presentation deck and defense-prep still cite
+0.75 and can be synced on request.)
+
 *(Log continues below as further tests complete.)*

@@ -47,15 +47,19 @@ DEFAULT_WEIGHTS = {
     "wikidata": 0.10,
 }
 
-# Data-derived, not a starting guess: a sampling-corrected ROC/Youden's-J
-# analysis over the control-group regeneration data (training/optimal_threshold_roc.py)
-# put the optimal cutoff at t=0.74 (AUC=0.62), with a 2000-resample bootstrap
-# 95% CI of [0.69, 0.79] and mode 0.75 - independently confirmed by a
-# two-proportion significance test (p=0.011) between the 0.68-0.75 and 0.75+
-# score bands. See RESEARCH_LOG.md Sections 22-24 for the full derivation,
-# including a real methodological mistake (naive ROC ignoring the
-# case-control sampling design) caught and fixed along the way.
-DEFAULT_THRESHOLD = 0.75
+# Data-derived, not a starting guess. Final calibration on the complete
+# 5000-question dataset (training/optimal_threshold_roc.py), sampling-corrected
+# for the mid-run control-rate change: ROC/Youden's-J point optimum t=0.70
+# (AUC=0.629), 2000-resample bootstrap median 0.72 / mode 0.70 / 95% CI
+# [0.69, 0.75], independently confirmed by a two-proportion significance test
+# (p=0.011). The J curve is near-flat across 0.70-0.74, so any value in that
+# band is statistically equivalent; 0.72 is adopted as the bootstrap-median
+# optimum - a balanced middle ground (sensitivity 66.7%, specificity 50.3%)
+# between the Youden point optimum (0.70, balanced) and the earlier recall-first
+# 0.75 (sensitivity 86.7% but specificity only 30.2%). See RESEARCH_LOG.md
+# Sections 20-24, 34, 36 for the full derivation and the sampling-weight bug
+# caught and fixed along the way.
+DEFAULT_THRESHOLD = 0.72
 MAX_REGENERATION_ATTEMPTS = 2
 
 
