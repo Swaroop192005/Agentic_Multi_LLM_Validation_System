@@ -1,16 +1,21 @@
 /**
  * deliverables/report/content.js
  * ------------------------------
- * All prose for the B.E. project report, kept separate from layout so the
- * wording can be revised without touching the docx plumbing.
+ * Front matter, figure/table registries and appendices for the B.E. project
+ * report. The chapters themselves live in chapters_1_3.js and chapters_4_7.js.
  *
- * Every figure quoted here is sourced from the repository - RESEARCH_LOG.md
- * sections 1-37, training/optimal_threshold_roc.py and
- * training/combiner_bias_analysis.py - not estimated. Where a result is
- * provisional it says so in the text rather than being rounded into certainty.
+ * Every figure quoted in the text is sourced from the repository -
+ * RESEARCH_LOG.md sections 1-37, training/optimal_threshold_roc.py and
+ * training/combiner_bias_analysis.py - not estimated. The plates are generated
+ * by make_figures.py, which IMPORTS those same analysis functions, so the
+ * figures and the prose cannot drift apart.
  *
- * Placeholders in square brackets are the fields only the team can supply.
+ * Placeholders in square brackets are fields only the team can supply.
  */
+
+const { CH1, CH2, CH3 } = require("./chapters_1_3.js");
+const { CH4, CH5, CH6, CH7 } = require("./chapters_4_7.js");
+const { CH_TESTING } = require("./chapter_testing.js");
 
 const PLACEHOLDER = {
   students: [
@@ -33,16 +38,17 @@ const TITLE_SENTENCE = "Agentic Multi-LLM Validation System: Label-Free Quality 
 
 const ACKNOWLEDGEMENT = [
   `We express our sincere gratitude to our guide, ${PLACEHOLDER.guide}, Department of Computer Engineering, Vidyalankar Institute of Technology, for the guidance, patience and critical questioning that shaped this work. The insistence on measuring claims rather than asserting them is the single habit that most improved this project, and several results in Chapter 5 exist only because a comfortable-looking number was questioned instead of accepted.`,
-  `We thank the Head of the Department and the faculty of the Department of Computer Engineering for providing the laboratory facilities and the computational resources without which a fully local, multi-model pipeline would not have been feasible.`,
+  `We thank ${PLACEHOLDER.hod}, Head of the Department of Computer Engineering, and ${PLACEHOLDER.principal}, Principal, for providing the laboratory facilities and the computational resources without which a fully local, six-model pipeline would not have been feasible.`,
   `We are grateful to the project coordinators for their guidance on the evaluation schedule and documentation standards, and to our peers for reviewing early demonstrations and asking the awkward questions that exposed more than one hidden assumption.`,
-  `Finally, we thank our families for their patience during the long experimental runs that this project required.`,
+  `Finally, we thank our families for their patience during the long unattended experimental runs that this project required.`,
 ];
 
+// Target 250-350 words per the format guidelines.
 const ABSTRACT = [
-  `Large Language Models produce fluent text that is frequently wrong, and the standard remedy - asking a second model to grade the first - inherits well documented pathologies of its own. Evaluator models are known to prefer answers in particular prompt positions and to prefer text they themselves generated. This project asks a narrower and more tractable question: can the quality of a locally hosted question-answering system be validated when no human-annotated ground truth is available at all?`,
-  `The system presented here answers each question twice, using two independently prompted local models (LLaMA 3 and Mistral), and then validates the pair rather than trusting either. An independent Verifier (phi3) and an independent Judge (qwen3.5:9b) score both candidate answers blind against an eight-factor, eighty-point rubric. Semantic similarity, cross-model agreement and two external encyclopedia checks against Wikipedia and Wikidata are combined with the Judge's rubric total into a single weighted confidence score in the range zero to one. Any answer falling below a calibrated threshold is regenerated automatically, up to a bounded number of attempts, and a sixth agent synthesises the final response from the best attempt. The entire pipeline runs offline on local hardware with no external paid interfaces.`,
-  `Validation is label-free by construction. A self-generated corpus of 5,000 questions across ten knowledge domains was produced, and the decision threshold was calibrated against censored data using a deliberately injected control group, receiver-operating-characteristic analysis with Youden's J statistic, and a 2,000-sample bootstrap, yielding an adopted operating point of 0.72 with a 95% confidence interval of [0.69, 0.75].`,
-  `The investigation also produced a negative result of independent interest. Measured across all 5,000 records with prompt position and evaluator verdict crossed as controls, the original synthesising agent was found to prefer its own generated answer by 18.1 percentage points, and to prefer whichever answer occupied the first prompt slot by a further 10.8 percentage points. Replacing that agent with a model that is neither generator removes the first effect by construction. Three further measurement errors were detected and corrected during the project before they reached any reported conclusion; these are documented rather than omitted.`,
+  `Large Language Models produce fluent text that is frequently wrong, and the standard remedy - asking a second model to grade the first - inherits well documented pathologies of its own. Evaluator models are known to prefer answers in particular prompt positions, to prefer longer answers, and to prefer text they themselves generated. This project asks a narrower and more tractable question: can the quality of a locally hosted question-answering system be validated when no human-annotated ground truth is available at all?`,
+  `The system presented here answers each question twice, using two independently prompted local models, and then validates the pair rather than trusting either. An independent Verifier and an independent Judge score both candidates blind against an eight-factor, eighty-point rubric. Semantic similarity, cross-model agreement and two external encyclopedia checks are combined with the Judge's total into a single weighted confidence score. Any answer below a calibrated threshold is regenerated automatically, up to a bounded number of attempts, and a sixth agent synthesises the final response. The pipeline runs entirely offline with no external paid interfaces.`,
+  `Validation is label-free by construction. A self-generated corpus of 5,000 questions across ten domains was produced, and the decision threshold calibrated against censored data using a deliberately injected control group, receiver-operating-characteristic analysis with Youden's J statistic, and a 2,000-sample bootstrap, yielding an adopted operating point of 0.72 with a 95 per cent confidence interval of [0.69, 0.75].`,
+  `The investigation also produced a negative result of independent interest. Measured across all 5,000 records with prompt position and evaluator verdict crossed as controls, and answer length tested and excluded as a competing explanation, the original synthesising agent was found to prefer its own generated answer by 18.1 percentage points and whichever answer occupied the first prompt slot by a further 10.8 points. Replacing that agent with a model that is neither generator removes the first effect by construction. Four measurement errors were detected and corrected before reaching any reported conclusion; these are documented rather than omitted.`,
 ];
 
 const ABBREVIATIONS = [
@@ -52,10 +58,12 @@ const ABBREVIATIONS = [
   ["BLEU", "Bilingual Evaluation Understudy"],
   ["CI", "Confidence Interval"],
   ["CPU", "Central Processing Unit"],
+  ["DDL", "Data Definition Language"],
   ["GPU", "Graphics Processing Unit"],
   ["HTTP", "Hypertext Transfer Protocol"],
   ["J", "Youden's J statistic (sensitivity + specificity − 1)"],
   ["LLM", "Large Language Model"],
+  ["MMR", "Maximal Marginal Relevance"],
   ["NLP", "Natural Language Processing"],
   ["pp", "Percentage Points"],
   ["RAG", "Retrieval-Augmented Generation"],
@@ -65,439 +73,52 @@ const ABBREVIATIONS = [
   ["SQL", "Structured Query Language"],
   ["VRAM", "Video Random Access Memory"],
   ["τ (tau)", "Confidence threshold below which an answer is regenerated"],
+  ["r", "Pearson correlation coefficient"],
+  ["p", "Probability value of a statistical test"],
+  ["n", "Sample size"],
 ];
 
-/* Figures actually embedded in the document. The list is deliberately limited
- * to figures that exist: a List of Figures promising plates the reader cannot
- * find is worse than a short list. Further figures (ROC curve, bootstrap
- * distribution, per-criterion variance) are generated by the scripts in
- * training/ and are added when the report is expanded to full length. */
-const FIGURES = [
-  { n: "3.1", caption: "Six-stage pipeline architecture",
-    file: "fig_architecture.png", widthIn: 4.4, chapter: 3, after: "Pipeline Overview" },
-  { n: "4.1", caption: "Streaming interface: pipeline progress rendered stage by stage",
-    file: "fig_interface.png", widthIn: 5.9, chapter: 4, after: "Streaming Interface" },
-  { n: "5.1", caption: "Dataset generation monitor at completion of the 5,000-question corpus",
-    file: "fig_dataset.png", widthIn: 5.9, chapter: 5, after: "Experimental Setup" },
-];
+/* Figures, keyed by the name a chapter section refers to. Only figures that
+ * actually exist are listed: a List of Figures promising plates the reader
+ * cannot find is worse than a short list. */
+const FIGURES = {
+  architecture:       { n: "3.1", file: "fig_architecture.png",       widthIn: 4.3, caption: "Six-stage pipeline architecture, showing the regeneration loop and the signals feeding the confidence score" },
+  interface:          { n: "4.1", file: "fig_interface.png",          widthIn: 5.9, caption: "Streaming interface: the pipeline renders stage by stage as it executes" },
+  dataset:            { n: "5.1", file: "fig_dataset.png",            widthIn: 5.9, caption: "Dataset generation monitor at completion of the 5,000-question corpus" },
+  score_distribution: { n: "5.2", file: "fig_score_distribution.png", widthIn: 5.5, caption: "Distribution of the weighted confidence score, all attempts against final answers, with the adopted threshold marked" },
+  attempts:           { n: "5.3", file: "fig_attempts.png",           widthIn: 6.1, caption: "Attempts per question, and the reason each regeneration was triggered" },
+  roc:                { n: "5.4", file: "fig_roc.png",                widthIn: 3.5, caption: "Receiver operating characteristic of the confidence score against observed improvement, sampling-corrected" },
+  youden:             { n: "5.5", file: "fig_youden.png",             widthIn: 5.5, caption: "Youden's J across candidate thresholds, showing the near-flat plateau between 0.70 and 0.74" },
+  bootstrap:          { n: "5.6", file: "fig_bootstrap.png",          widthIn: 5.5, caption: "Bootstrap distribution of the optimal threshold over 2,000 weighted resamples" },
+  combiner_bias:      { n: "5.7", file: "fig_combiner_bias.png",      widthIn: 6.1, caption: "Combiner preference crossed by prompt position, model identity and judge verdict, with the two effects separated" },
+};
 
-/* Numbered tables actually present, in document order. */
+const FIGURE_ORDER = ["architecture", "interface", "dataset", "score_distribution",
+                      "attempts", "roc", "youden", "bootstrap", "combiner_bias"];
+
 const TABLES = [
+  ["2.1", "Evaluation approaches and their applicability to this project"],
   ["3.1", "Agent roles, models and decoding parameters"],
   ["3.2", "The eight-factor evaluation rubric"],
   ["3.3", "Confidence score signal weights"],
-  ["5.1", "Dataset composition"],
+  ["5.1", "Corpus composition"],
   ["5.2", "Threshold operating points"],
-  ["5.3", "Combiner bias decomposition"],
+  ["5.3", "Combiner bias, effects separated"],
   ["5.4", "Measurement errors and corrections"],
+  ["5.5", "Per-criterion scores for the winning answer"],
+  ["5.6", "External signal availability across 8,432 attempts"],
+  ["5.7", "The two generators compared by true identity"],
+  ["6.1", "Observed failure modes and system response"],
+  ["H.1", "Sampling-corrected ROC across all candidate cutoffs"],
+  ["I.1", "Signals for question 4, attempt 2"],
+  ["K.1", "Terms as used in this report"],
 ];
 
-/* ------------------------------------------------------------------ *
- * Chapters. Each entry: { title, sections: [{ heading, paras[], ... }] }
- * A section may also carry: bullets[], table{caption,head,rows}, caption
- * ------------------------------------------------------------------ */
-
-const CHAPTERS = [
-  {
-    title: "Introduction",
-    sections: [
-      {
-        heading: "Background",
-        paras: [
-          `Large Language Models have moved in a very short time from research artefacts to components that ordinary software is expected to depend upon. Their central practical weakness is well known and has not been solved: they generate text that is fluent, confident and internally coherent whether or not it is correct. A model does not signal uncertainty in the way a traditional component signals an error, and a wrong answer is typically indistinguishable in tone from a right one.`,
-          `The response that has emerged across industry and research is to use a second model as an evaluator - the "LLM-as-a-judge" pattern. It is attractive because it scales: evaluation becomes a function call rather than a human reading answers. It is also, however, a measurement instrument built from the same material as the thing being measured, and a growing body of work shows that such instruments carry systematic biases. Evaluator models prefer answers presented in certain positions, prefer longer answers, and prefer text generated by themselves or by models of their own family.`,
-          `A second constraint motivates this work. Much of the published evaluation literature assumes access either to human preference labels or to a frontier commercial model acting as a reference judge. Both assumptions fail for a department laboratory and for any deployment handling data that cannot leave the institution. This project therefore restricts itself to models that run locally, on a single workstation, with no external paid interfaces of any kind.`,
-        ],
-      },
-      {
-        heading: "Problem Statement",
-        paras: [
-          `Given a question-answering system assembled from locally hosted Large Language Models, and given no human-annotated ground truth for its outputs, determine whether the quality of its answers can be validated, quantified and improved - and determine the extent to which the validation machinery itself is biased.`,
-          `The second clause is not decorative. If the evaluation apparatus silently prefers one model, one answer position or one writing style, then every quality figure it produces is contaminated, and improvements measured against it may be artefacts. A validation system that cannot be turned on itself is of limited scientific value.`,
-        ],
-      },
-      {
-        heading: "Objectives",
-        bullets: [
-          "Design and implement a multi-agent question-answering pipeline in which generation and evaluation are performed by different models, running entirely offline.",
-          "Define a multi-signal confidence score that combines model-internal and external evidence, so that no single signal dominates the quality decision.",
-          "Establish an automatic regeneration mechanism gated on that confidence score, with a bounded number of attempts.",
-          "Calibrate the regeneration threshold from data rather than intuition, accounting for the fact that the available observations are censored by the gate itself.",
-          "Generate a corpus large enough for the calibration to be statistically meaningful, without human annotation.",
-          "Measure the validation apparatus for position bias and self-preference bias, and correct what is found.",
-          "Document measurement errors made during the project, including those caught before they influenced any conclusion.",
-        ],
-      },
-      {
-        heading: "Scope and Limitations",
-        paras: [
-          `The system is scoped to open-ended factual and technical question answering in English, over ten general knowledge domains. It is not scoped to mathematical reasoning requiring symbolic manipulation, to code generation, or to multi-turn dialogue.`,
-          `Three limitations are stated at the outset and revisited in Chapter 6. First, the validation is label-free, which means it can establish internal consistency, discrimination and relative improvement, but it cannot establish absolute factual accuracy; a claim that the system is "86 per cent correct" is not supported by this methodology and is not made. Second, the tuned values - the threshold, the signal weights, the choice of judge - are specific to this model set and would require re-derivation on another. Third, the position effect documented in Chapter 5 is mitigated but not eliminated.`,
-        ],
-      },
-      {
-        heading: "Organisation of the Report",
-        paras: [
-          `Chapter 2 surveys the relevant literature on automated evaluation of generated text and on the known biases of model-based evaluators, and identifies the gap this work addresses. Chapter 3 presents the system architecture, the rubric and the confidence score. Chapter 4 describes the implementation, including the data generation harness and the resilience mechanisms that an unattended multi-day experimental run required. Chapter 5 presents the experiments and results, including the threshold calibration, the bias investigations and the measurement errors detected along the way. Chapter 6 draws conclusions and makes recommendations, and Chapter 7 sets out future scope.`,
-        ],
-      },
-    ],
-  },
-
-  {
-    title: "Literature Review",
-    sections: [
-      {
-        heading: "Automatic Metrics for Generated Text",
-        paras: [
-          `The earliest automatic metrics for generated text, BLEU and ROUGE, measure n-gram overlap against one or more reference texts. They were designed for machine translation and summarisation respectively, and they carry an assumption that does not transfer to open-ended question answering: that a good output resembles a specific reference output. For a question admitting many correct phrasings, overlap with any single reference is a weak proxy for quality.`,
-          `Embedding-based metrics such as BERTScore improve on this by comparing contextual embeddings rather than surface tokens, tolerating paraphrase. They remain reference-based, however, and still require a reference answer that this project, by construction, does not have.`,
-          `This project uses embedding similarity, but deliberately not as a quality metric against a reference. It is used in two restricted roles: as a relevance signal between the question and the answer, and as an agreement signal between the two independently generated candidate answers. The distinction matters, and an early version of this project violated it; Section 5.2 documents the consequence.`,
-        ],
-      },
-      {
-        heading: "LLM-as-a-Judge",
-        paras: [
-          `Using a strong language model to grade the outputs of another has become the dominant evaluation strategy for open-ended generation. Work on MT-Bench and Chatbot Arena established that model judges correlate reasonably well with human preference at the aggregate level, which is what made the approach credible.`,
-          `Subsequent work refined the pattern. G-Eval uses chain-of-thought prompting with form-filling to obtain more stable numeric scores. Prometheus demonstrated that an open, comparatively small model can be fine-tuned to approach the grading behaviour of a much larger proprietary one, which is directly relevant to a locally hosted deployment.`,
-          `The same literature documents the failure modes. Model judges exhibit position bias, favouring candidates presented in a particular slot; verbosity bias, favouring longer answers; and self-enhancement bias, favouring text generated by themselves or by related models. These are not incidental: they are reproducible, and they are large enough to reverse a verdict.`,
-        ],
-      },
-      {
-        heading: "Multi-Agent Orchestration",
-        paras: [
-          `Frameworks such as AutoGen and CrewAI popularised the decomposition of a task across several cooperating model-backed agents with distinct roles. The argument is that specialised roles with narrow prompts outperform a single model asked to do everything at once, and that disagreement between agents is itself informative.`,
-          `This project adopts the role decomposition but rejects one common convenience of these frameworks: reusing the same underlying model for several roles. If the generator and the judge are the same model, the evaluation is not independent, and the architecture quietly reintroduces exactly the self-preference bias that the literature warns about. Chapter 5 shows what that costs when it is measured rather than assumed away.`,
-        ],
-      },
-      {
-        heading: "Retrieval-Augmented Generation and External Grounding",
-        paras: [
-          `Retrieval-Augmented Generation reduces hallucination by conditioning generation on retrieved documents. It is relevant here in two ways: as an optional input mode for user-supplied documents, and as the conceptual basis for the external fact-checking signals. The system queries Wikipedia and Wikidata as two structurally different encyclopedia sources, so that corroboration comes from outside the model family rather than from another model's opinion.`,
-        ],
-      },
-      {
-        heading: "Identified Gap",
-        paras: [
-          `The literature establishes that model-based evaluation works at aggregate scale and that it is biased in known directions. What is comparatively sparse is a complete, reproducible account of building such a system under a hard no-ground-truth, no-external-API constraint, and then turning the measurement apparatus on itself to quantify its own bias with the confounds properly controlled.`,
-          `This project addresses that gap. The specific contributions are: a label-free validation methodology using a deliberately injected control group to defeat censoring; a threshold calibrated by three independent statistical routes that agree; and a decomposition of evaluator bias into position and identity components, with length controlled, which produced a result that overturned the project's own prior design decision.`,
-        ],
-      },
-    ],
-  },
-
-  {
-    title: "System Architecture",
-    sections: [
-      {
-        heading: "Design Principles",
-        paras: [
-          `Three principles constrain the architecture. First, separation of concerns between generation and evaluation: no model both produces an answer and judges or merges it. Second, blindness: evaluators never learn which system produced which candidate, and answer order is randomised per question. Third, plurality of evidence: the quality decision rests on several signals of different kinds, so that no single failing signal can dominate.`,
-        ],
-      },
-      {
-        heading: "Pipeline Overview",
-        paras: [
-          `The pipeline executes six stages for each question. Stages 1 and 2 generate two candidate answers independently. Stage 3 applies the Verifier. Stage 4 computes semantic and external signals. Stage 5 applies the Judge. Stage 6 synthesises the final answer from the best attempt. Between stages 5 and 6 the weighted confidence score is computed and the regeneration gate is evaluated.`,
-        ],
-      },
-      {
-        heading: "Agent Roles and Model Assignment",
-        paras: [
-          `Each role is served by a deliberately chosen model. The two generators are different model families so that their errors are less likely to correlate. The Verifier and the Judge are both distinct from the generators and from each other. The Combiner is distinct from every generator, for reasons established empirically in Section 5.5.`,
-        ],
-        table: {
-          caption: "Table 3.1: Agent roles, models and decoding parameters",
-          head: ["Stage", "Agent", "Model", "Temp.", "Max tokens", "Responsibility"],
-          rows: [
-            ["1", "Generator A", "llama3", "0.7", "600", "Produce a candidate answer"],
-            ["2", "Generator B", "mistral", "0.7", "600", "Produce an independent candidate"],
-            ["3", "Verifier", "phi3:latest", "0.1", "700", "Score both candidates on the rubric"],
-            ["4", "Similarity Scorer", "all-MiniLM-L6-v2", "—", "—", "Embedding relevance and agreement"],
-            ["5", "Judge", "qwen3.5:9b", "0.1", "900", "Score both and declare a winner"],
-            ["6", "Combiner", "gemma2:9b", "0.4", "1000", "Synthesise the final answer"],
-          ],
-        },
-        paras2: [
-          `The Judge runs with internal reasoning disabled. With reasoning enabled, qwen3.5:9b consumes its entire generation budget on an internal deliberation and returns an empty response on long rubric prompts - a failure that is silent, in that the pipeline receives a well-formed but empty reply. Disabling reasoning resolved it.`,
-        ],
-      },
-      {
-        heading: "The Eight-Factor Rubric",
-        paras: [
-          `Both the Verifier and the Judge score each candidate answer against the same eight criteria, each on a scale of zero to ten, for a maximum of eighty points per answer. Using an identical rubric for two independent evaluators is what makes their agreement a meaningful signal.`,
-        ],
-        table: {
-          caption: "Table 3.2: The eight-factor evaluation rubric",
-          head: ["Criterion", "What it measures"],
-          rows: [
-            ["Factual Correctness", "Whether the stated facts are accurate"],
-            ["Question Relevance", "Whether the answer addresses what was asked"],
-            ["Context Relevance", "Consistency with any supplied reference material"],
-            ["Faithfulness", "Whether claims are supportable rather than invented"],
-            ["Completeness", "Whether the answer covers the question adequately"],
-            ["Hallucination-Free", "Absence of fabricated specifics"],
-            ["Clarity", "Structure and readability"],
-            ["Consistency", "Absence of internal self-contradiction"],
-          ],
-        },
-        paras2: [
-          `Rubric totals are recomputed from the individual criterion scores rather than taken from the model's own stated total. This is not defensive programming for its own sake: evaluator models were observed stating totals that did not match the sum of the scores they had just produced, including a total of 55 reported against a maximum of 40. Arithmetic is not delegated to the model.`,
-        ],
-      },
-      {
-        heading: "The Weighted Confidence Score",
-        paras: [
-          `Six signals are combined into a single value between zero and one. Any signal that is unavailable for a given answer is dropped and the remaining weights are renormalised proportionally, so the score degrades gracefully rather than failing.`,
-        ],
-        table: {
-          caption: "Table 3.3: Confidence score signal weights",
-          head: ["Signal", "Weight", "Source"],
-          rows: [
-            ["Judge rubric total", "0.40", "Judge model, normalised from /80"],
-            ["Semantic similarity", "0.15", "Embedding cosine, question to answer"],
-            ["Wikipedia check", "0.15", "External encyclopedia, relevance-gated"],
-            ["Model agreement", "0.10", "BERTScore between the two candidates"],
-            ["Verifier-Judge agreement", "0.10", "Concordance of two independent evaluators"],
-            ["Wikidata check", "0.10", "Second, structurally different external source"],
-          ],
-        },
-        paras2: [
-          `One omission is deliberate and important. No signal referenced against the final combined answer is included. Such signals were found to be systematically biased toward whichever candidate the Combiner had been built from, because for most of the project the Combiner and one generator were the same model. Section 5.5 quantifies that effect.`,
-        ],
-      },
-      {
-        heading: "Regeneration Gate",
-        paras: [
-          `If the weighted confidence score for an attempt falls below the threshold, the pipeline discards the attempt and generates again, to a maximum of two further attempts. The highest-scoring attempt is retained even if a later attempt regresses, so regeneration cannot make the shipped answer worse. The threshold value is derived in Section 5.4.`,
-        ],
-      },
-      {
-        heading: "Bias Controls",
-        paras: [
-          `Two controls operate on every question. Brand-blind prompting removes any mention of which system produced a candidate from the evaluator prompts. Position randomisation assigns the two candidates to the two prompt slots by a fresh coin flip per question, with the true mapping recorded separately so that per-model statistics remain recoverable afterwards.`,
-          `It is worth being precise about what randomisation achieves. It makes a position effect unbiased with respect to model identity; it does not remove the position effect itself. An evaluator that favours the first slot still favours the first slot - randomisation only ensures that the favour falls equally on both systems across a large corpus. Section 5.5 shows why that distinction has practical consequences.`,
-        ],
-      },
-    ],
-  },
-
-  {
-    title: "Implementation",
-    sections: [
-      {
-        heading: "Technology Stack",
-        bullets: [
-          "Model runtime: Ollama, serving all six models locally over HTTP.",
-          "Orchestration: Python with asyncio; LangChain's Ollama binding wraps each agent.",
-          "Web service: FastAPI, streaming pipeline progress to the browser over Server-Sent Events.",
-          "Embeddings: sentence-transformers with all-MiniLM-L6-v2, executed on GPU.",
-          "Persistence: SQLite, one row per attempt, retaining every raw signal.",
-          "Frontend: dependency-free HTML, CSS and JavaScript consuming the event stream.",
-          "Hardware: a single workstation with an NVIDIA RTX 4090 (24 GB VRAM).",
-        ],
-      },
-      {
-        heading: "Concurrency and Memory Constraints",
-        paras: [
-          `The six models together exceed the available video memory if resident simultaneously, so the pipeline runs with a concurrency of one and relies on the runtime to load and evict model weights as stages execute. An earlier configuration that ran the Verifier and the Judge concurrently produced memory over-subscription stalls, and the two are now deliberately sequential despite the latency cost.`,
-        ],
-      },
-      {
-        heading: "Streaming Interface",
-        paras: [
-          `Because a complete pipeline run takes on the order of one to two minutes, a request-response interface would present the user with an unexplained pause. The service instead emits a typed event as each stage starts and completes, and the frontend renders the pipeline filling in progressively, including each attempt's confidence score and the reason for any regeneration. The interface is therefore not only a demonstration surface but the primary debugging tool for the pipeline's behaviour.`,
-        ],
-      },
-      {
-        heading: "Dataset Generation Harness",
-        paras: [
-          `A batch harness runs the full pipeline over a question corpus and records every raw signal for every attempt - not merely the final answer. This matters for the analyses in Chapter 5, which depend on being able to reconstruct what each evaluator saw and in what order.`,
-          `The harness is restartable. It records which question indices are complete and resumes from the first incomplete one, because a run spanning several days is interrupted in practice by reboots, driver updates and power events.`,
-        ],
-      },
-      {
-        heading: "Resilience",
-        paras: [
-          `Three separate multi-hour gaps in generation occurred before resilience was addressed, caused by terminal closure, session teardown and the machine sleeping. A scheduled task external to any interactive session now checks every five minutes that the required processes are alive and restarts any that are not. This is unglamorous engineering, but a multi-day unattended experimental run is not achievable without it.`,
-        ],
-      },
-      {
-        heading: "Data Model",
-        paras: [
-          `Each attempt is stored as one row carrying the question, both candidate answers, the true model-to-position mapping, every per-criterion score from both evaluators, all six confidence signals, the weighted score, the regeneration reason and the elapsed time. The final attempt for a question additionally carries the combined answer.`,
-          `A subtle defect in this schema was found at the end of the generation run and is documented in Section 5.6, because it illustrates a class of bug that silently corrupts aggregate statistics.`,
-        ],
-      },
-    ],
-  },
-
-  {
-    title: "Experiments and Results",
-    sections: [
-      {
-        heading: "Experimental Setup",
-        paras: [
-          `A corpus of 5,000 questions spanning ten knowledge domains was generated and processed through the complete pipeline, producing 8,432 attempt records of which 5,000 are final answers. All reported statistics are computed over this corpus unless stated otherwise.`,
-        ],
-        table: {
-          caption: "Table 5.1: Dataset composition",
-          head: ["Property", "Value"],
-          rows: [
-            ["Questions", "5,000"],
-            ["Knowledge domains", "10"],
-            ["Total attempt records", "8,432"],
-            ["Final answers", "5,000"],
-            ["Mean attempts per question", "1.69"],
-            ["Maximum attempts permitted", "3"],
-          ],
-        },
-      },
-      {
-        heading: "Judge Selection, and an Evaluator Coupling Error",
-        paras: [
-          `Several candidate judge models were evaluated. The selection criterion was not agreement with any reference, which was unavailable, but per-criterion discrimination: a useful judge must produce differentiated scores across the eight rubric criteria rather than collapsing them.`,
-          `One candidate, CompassJudger-1, assigned all eight criteria an identical score on between 75 and 80 per cent of answers once scoring blind. A rubric that always returns the same value on every axis carries almost no information, and the model was rejected on that basis.`,
-          `A more instructive failure concerned a signal, not a model. A "second opinion" agreement signal was found to have been derived, indirectly, from the Judge's own output. It therefore agreed with the Judge by construction and inflated the confidence score. The clue was that it performed suspiciously well. It was removed from the score entirely.`,
-        ],
-      },
-      {
-        heading: "Verifier Discrimination",
-        paras: [
-          `For the Verifier's scores to be meaningful, the Verifier must be capable of distinguishing good answers from bad ones. This was tested directly by presenting deliberately corrupted answers alongside intact ones. The Verifier scored intact answers in the range 77 to 80 out of 80, and corrupted answers between 0 and 8, a separation of roughly 74.5 points.`,
-          `This result is important for interpreting the bias findings that follow. It establishes that the evaluators are not simply assigning high scores indiscriminately; they discriminate strongly when there is something to discriminate.`,
-        ],
-      },
-      {
-        heading: "Threshold Calibration Under Censored Data",
-        paras: [
-          `The regeneration threshold cannot be calibrated naively, because the data available to calibrate it are censored by the threshold itself. Answers above the operating threshold are never regenerated, so no observation exists of whether regenerating them would have helped. Fitting to the visible data alone estimates the wrong quantity.`,
-          `The remedy was a control group. A random fraction of answers that had already passed the gate were regenerated anyway, purely for measurement. This yields unbiased observations above the threshold at a modest cost in computation.`,
-          `Three independent analyses were then applied to the resulting data. A two-proportion significance test confirmed that the improvement rate differs across confidence bands beyond what sampling noise explains, at p = 0.011. A receiver-operating-characteristic analysis maximising Youden's J statistic placed the point optimum at 0.70, with an area under the curve of 0.629. A bootstrap over 2,000 resamples gave a median optimal cutoff of 0.72, a modal value of 0.70, and a 95 per cent confidence interval of [0.69, 0.75].`,
-        ],
-        table: {
-          caption: "Table 5.2: Threshold operating points",
-          head: ["Threshold", "Youden's J", "Sensitivity", "Specificity", "Status"],
-          rows: [
-            ["0.70", "0.190", "—", "—", "ROC point optimum"],
-            ["0.72", "0.170", "66.7%", "50.3%", "Adopted (bootstrap median)"],
-            ["0.75", "0.169", "86.7%", "30.2%", "Earlier recall-first choice"],
-          ],
-        },
-        paras2: [
-          `The J statistic is nearly flat across 0.70 to 0.74, which means values in that band are statistically indistinguishable and the choice among them is a policy decision rather than a statistical one. The adopted value of 0.72 is the bootstrap median and sits in the middle of the plateau, balancing sensitivity against specificity. The earlier value of 0.75 sat at the very upper edge of the confidence interval and traded specificity heavily for recall.`,
-        ],
-      },
-      {
-        heading: "Evaluator Bias: Position and Identity",
-        paras: [
-          `The most substantial experimental result of the project concerns the Combiner, the agent that synthesises the final answer. For most of the project the Combiner was llama3, which is also one of the two generators. It was therefore merging its own writing against another model's on every question.`,
-          `The effect was measured across all 5,000 final records by embedding the two candidate answers and the final answer, and determining which candidate the final answer sat closer to. Crossing prompt position against model identity separates two effects that are otherwise conflated.`,
-        ],
-        table: {
-          caption: "Table 5.3: Combiner bias decomposition",
-          head: ["Effect", "Magnitude", "Significance"],
-          rows: [
-            ["Identity (own-answer preference, position fixed)", "+18.1 pp", "p ≈ 1.7 × 10⁻⁸⁹"],
-            ["Position (first-slot preference, identity averaged)", "+10.8 pp", "p ≈ 5.7 × 10⁻⁵³"],
-            ["Length (candidate confound)", "r = +0.029", "Not supported"],
-          ],
-        },
-        paras2: [
-          `Length was a credible alternative explanation and was tested rather than dismissed. The llama3 generator does write longer answers on average, 366 words against 317. However the correlation between length advantage and preference is only +0.029, and the effect persists at 61.1 per cent among length-matched pairs, so length does not account for it.`,
-          `The mechanism proved more specific than simple style recognition. The preference is conditional on the Judge agreeing: where the Judge selected the llama3 answer, the final answer favoured it 69.4 per cent of the time, but where the Judge selected the other candidate, the figure was 50.7 per cent, which is not statistically distinguishable from chance. The Combiner followed the Judge 69.4 per cent of the time when the Judge pointed at its own output, and only 49.3 per cent when it pointed elsewhere - a twenty point asymmetry in obedience. In the 1,815 records where the llama3 answer occupied the first slot and the Judge had selected the other candidate, the final answer still landed closer to llama3 in 64.0 per cent of cases.`,
-          `The Combiner was consequently reassigned to gemma2:9b, a model that is neither generator, nor the Verifier, nor the Judge, which removes the identity term by construction rather than reducing it. A controlled replay on a held-out sample, with every input frozen and only the Combiner model varied, indicates that the replacement is close to position-neutral where the original preferred the first slot in roughly four cases out of five. That replay is at the time of writing partially complete and its figures are therefore reported as provisional.`,
-          `The position effect is not resolved by changing the model and is recorded as an open problem. Chapter 7 discusses extractive selection as a candidate remedy that would eliminate it by construction.`,
-        ],
-      },
-      {
-        heading: "Measurement Errors Detected and Corrected",
-        paras: [
-          `Four errors were identified during the project that would have corrupted reported results had they gone unnoticed. They are recorded here because a report that presents only its successes misrepresents how the work was actually done, and because each was found by the same habit: a result that looked too clean was checked rather than accepted.`,
-        ],
-        table: {
-          caption: "Table 5.4: Measurement errors and corrections",
-          head: ["Error", "Consequence if unnoticed", "Correction"],
-          rows: [
-            ["Evaluator model reported a rubric total inconsistent with its own criterion scores", "Inflated or deflated confidence scores", "Totals recomputed from criterion scores"],
-            ["A 'second opinion' signal was derived from the Judge's own output", "Self-agreement inflating confidence", "Signal removed from the score"],
-            ["Threshold analysis applied a single sampling weight although the control rate changed mid-run", "Mis-weighted threshold estimate", "Per-record historical weighting applied"],
-            ["Restart-orphaned attempts produced duplicate final rows for four questions", "Aggregate statistics over a corpus of the wrong size", "Rows corrected and the write targeted by unique row identifier"],
-          ],
-        },
-        paras2: [
-          `The fourth deserves comment. Attempts were being marked final by matching on question index and attempt number, a pair that appears unique but is not: if the process is interrupted between inserting an attempt and marking it, the question is reprocessed on restart and its fresh attempt shares the same pair. The fix was to return the row identifier at insertion and target the update by that identifier alone.`,
-        ],
-      },
-    ],
-  },
-
-  {
-    title: "Conclusion and Recommendations",
-    sections: [
-      {
-        heading: "Conclusions",
-        paras: [
-          `This project set out to determine whether a locally hosted question-answering system can be validated without human-annotated ground truth, and the answer is a qualified yes. Internal consistency, evaluator discrimination, relative improvement under regeneration and the calibration of an operating threshold are all achievable label-free. Absolute factual accuracy is not, and no such claim is made.`,
-          `The threshold calibration demonstrates that a parameter which is commonly chosen by intuition can be derived from data even when those data are censored by the parameter itself, provided a control group is deliberately introduced. Three independent statistical routes converged on the same narrow band, and the adopted value of 0.72 is the bootstrap median of that band.`,
-          `The most significant finding is methodological. Turning the measurement apparatus on itself revealed that the synthesising agent preferred its own generated answers by 18.1 percentage points, with a separate 10.8 point preference for the first prompt slot, and that neither effect is explained by answer length. This was not a suspected weakness that was confirmed; it was a quantified defect in the project's own prior design, found by measurement, and corrected.`,
-          `A system of this kind is therefore best understood not as a correctness oracle but as a calibrated quality gate: it reliably separates weaker answers from stronger ones and acts on that separation, while remaining honest about what it cannot certify.`,
-        ],
-      },
-      {
-        heading: "Recommendations",
-        bullets: [
-          "No model should both generate and evaluate within an evaluation pipeline. The cost of violating this is measurable and was measured here at 18.1 percentage points.",
-          "Randomising presentation order is necessary but not sufficient. It makes a position effect unbiased with respect to identity; it does not remove the effect, and systems should state which of the two they have achieved.",
-          "Any threshold governing a feedback loop should be calibrated against a control group, because the loop censors exactly the observations needed to calibrate it.",
-          "Evaluator arithmetic should be recomputed rather than trusted, and any signal that performs unexpectedly well should be traced to its source before being relied upon.",
-          "Measurement errors should be documented rather than quietly corrected; several of the most useful findings in this project originated in investigating an anomaly.",
-        ],
-      },
-    ],
-  },
-
-  {
-    title: "Future Scope",
-    sections: [
-      {
-        heading: "Eliminating the Position Effect by Construction",
-        paras: [
-          `The residual position effect arises because a generative synthesiser reads a prompt in order. An extractive approach would not: maximal marginal relevance selects sentences by relevance and non-redundancy, scoring content rather than position, which removes both the position and identity terms by construction and makes the contribution of each source directly countable rather than inferred.`,
-          `One property of maximal marginal relevance must be addressed before adopting it. Its diversity term rewards selecting sentences that are dissimilar to those already chosen, and a contradiction is maximally dissimilar - so the method is structurally inclined to include both sides of a factual disagreement, which is the opposite of what a synthesiser should do. A hybrid in which extraction selects the content and a small model performs only surface realisation, forbidden from adding or removing material, would retain the bias elimination while preserving fluency.`,
-        ],
-      },
-      {
-        heading: "A Human-Annotated Validation Study",
-        paras: [
-          `The label-free methodology establishes internal properties but cannot establish absolute accuracy. A blind, balanced study in which human raters score a stratified sample of answers would allow the confidence score to be validated against human judgement and would convert the system's relative claims into absolute ones. A rating harness and a pre-registered analysis for such a study have been prepared.`,
-        ],
-      },
-      {
-        heading: "Calibrating the Retrieval Threshold",
-        paras: [
-          `The retrieval component applies a minimum similarity threshold below which retrieved material is excluded, so that an unrelated document cannot contaminate an answer. That threshold has not yet received the same treatment as the confidence threshold. Retrieval decisions are now logged, which provides the data required to calibrate it by the same control-group method.`,
-        ],
-      },
-      {
-        heading: "Distillation of the Judge",
-        paras: [
-          `Evaluation latency is dominated by the Judge. Training a small regression model to replicate the Judge's rubric scores from the question-answer pair would reduce evaluation to milliseconds and permit the pipeline to run at interactive speed. This was explored and set aside in favour of establishing the validation methodology first; the corpus generated by this project is well suited to it, since it contains per-criterion scores for 8,432 attempts.`,
-        ],
-      },
-      {
-        heading: "Generalisation",
-        paras: [
-          `The protocol - blind evaluation, discrimination testing, control-group calibration, bias decomposition - is model-agnostic and domain-agnostic. The tuned values are not. Re-deriving them on a different model set would test whether the method transfers while the numbers do not, which is the expected outcome and is stated here as a hypothesis rather than a result.`,
-        ],
-      },
-    ],
-  },
-];
+const CHAPTERS = [CH1, CH2, CH3, CH4, CH5, CH_TESTING, CH6, CH7];
 
 const REFERENCES = [
   "L. Zheng et al., “Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena,” in Advances in Neural Information Processing Systems (NeurIPS), 2023.",
-  "Y. Liu et al., “G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment,” in Proc. EMNLP, 2023.",
+  "Y. Liu, D. Iter, Y. Xu, S. Wang, R. Xu and C. Zhu, “G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment,” in Proc. EMNLP, 2023.",
   "S. Kim et al., “Prometheus: Inducing Fine-grained Evaluation Capability in Language Models,” in Proc. ICLR, 2024.",
   "T. Zhang, V. Kishore, F. Wu, K. Q. Weinberger and Y. Artzi, “BERTScore: Evaluating Text Generation with BERT,” in Proc. ICLR, 2020.",
   "K. Papineni, S. Roukos, T. Ward and W. Zhu, “BLEU: a Method for Automatic Evaluation of Machine Translation,” in Proc. ACL, 2002.",
@@ -509,6 +130,7 @@ const REFERENCES = [
   "W. J. Youden, “Index for rating diagnostic tests,” Cancer, vol. 3, no. 1, pp. 32–35, 1950.",
   "B. Efron and R. J. Tibshirani, An Introduction to the Bootstrap. New York: Chapman & Hall, 1993.",
   "E. B. Wilson, “Probable inference, the law of succession, and statistical inference,” Journal of the American Statistical Association, vol. 22, no. 158, pp. 209–212, 1927.",
+  "J. A. Hanley and B. J. McNeil, “The meaning and use of the area under a receiver operating characteristic (ROC) curve,” Radiology, vol. 143, no. 1, pp. 29–36, 1982.",
   "J. Carbonell and J. Goldstein, “The use of MMR, diversity-based reranking for reordering documents and producing summaries,” in Proc. ACM SIGIR, 1998.",
   "AI@Meta, “Llama 3 Model Card,” 2024.",
   "A. Q. Jiang et al., “Mistral 7B,” arXiv:2310.06825, 2023.",
@@ -516,38 +138,208 @@ const REFERENCES = [
   "Gemma Team, “Gemma 2: Improving Open Language Models at a Practical Size,” arXiv:2408.00118, 2024.",
   "A. Yang et al., “Qwen2.5 Technical Report,” arXiv:2412.15115, 2024.",
   "D. Vrandečić and M. Krötzsch, “Wikidata: a free collaborative knowledgebase,” Communications of the ACM, vol. 57, no. 10, pp. 78–85, 2014.",
+  "A. Agresti and B. A. Coull, “Approximate is better than exact for interval estimation of binomial proportions,” The American Statistician, vol. 52, no. 2, pp. 119–126, 1998.",
 ];
 
 const APPENDICES = [
   {
-    title: "Appendix A: Agent Prompt Configuration",
+    title: "Appendix A: Agent Configuration",
     paras: [
-      `Each agent is instantiated with a role description, a model identifier, a decoding temperature and a token budget, as given in Table 3.1. Evaluator prompts are brand-blind: they refer to the two candidates only as "Answer 1" and "Answer 2", and contain no reference to which system produced either.`,
-      `The Judge is additionally configured with internal reasoning disabled. The Combiner is instructed to merge and polish without introducing information absent from the source answers, and to produce at most 150 words.`,
+      `Each agent is instantiated with a role description, a model identifier, a decoding temperature and a token budget, as given in Table 3.1. The table is reproduced here with the rationale for each decoding choice.`,
+      `Generators run at temperature 0.7. Diversity between the two candidates is the point of having two, and a lower temperature would produce near-identical answers from which no agreement signal could be derived.`,
+      `Evaluators run at temperature 0.1. Scoring should be as close to deterministic as the runtime permits; an evaluator returning different scores for identical input on consecutive calls cannot support any claim about the system.`,
+      `The Combiner runs at 0.4, between the two. Synthesis requires enough freedom to produce fluent connective prose, and not enough to invent material absent from both sources.`,
+      `The Judge additionally sets the reasoning flag to false. With internal reasoning enabled, qwen3.5:9b expends its entire generation budget on deliberation and returns an empty string on long rubric prompts - a silent failure, since the caller receives a well-formed but empty response rather than an error.`,
     ],
   },
   {
-    title: "Appendix B: Confidence Score Computation",
+    title: "Appendix B: Evaluator Prompt Structure",
     paras: [
-      `The weighted score is the sum over available signals of the signal value multiplied by its renormalised weight. Signals are each mapped to the range zero to one before weighting; the Judge rubric total is divided by eighty. Where a signal is unavailable its weight is redistributed proportionally across the remaining signals, so the score remains on the same scale regardless of how many signals contributed.`,
+      `Evaluator prompts are brand-blind. They present the question and both candidate answers, labelled only as "Answer 1" and "Answer 2", with no reference to which system produced either. The Verifier prompt has the following structure, with the retrieved-context block present only when retrieval is active:`,
+      `An optional block of retrieved reference documents; then the question; then the two answers under "--- ANSWER 1 ---" and "--- ANSWER 2 ---" headings; then the instruction to score both answers on all eight criteria, writing one sentence per score explaining why and referencing specific content from the answer. Where no reference documents were supplied, Context Relevance is to be scored on whether the answer stays on topic. The prompt closes by requiring the total to be computed as the sum of the eight scores, to a maximum of eighty.`,
+      `The Judge prompt follows the same structure and additionally requires an overall winner and a short reasoning paragraph. The Judge does not receive the Verifier's scores; the two evaluations are independent, which is what makes their agreement a usable signal rather than an echo.`,
+      `One property of the evaluator output matters downstream and is easy to overlook. The reasoning prose refers to the candidates by label - "Answer 1 adheres more strictly to the prompt", for instance. Any downstream consumer that reorders the answers must remap those labels, or it will act on a verdict pointing at the wrong text. Section 5.10 records that exactly this defect was present in the live service.`,
     ],
   },
   {
-    title: "Appendix C: Threshold Calibration Procedure",
+    title: "Appendix C: The Eight-Factor Rubric in Full",
     paras: [
-      `The calibration proceeds in four steps. First, a random fraction of answers passing the gate are regenerated regardless, forming the control group. Second, each record is weighted by the control probability actually in force when it was generated, since that probability changed during the run. Third, the receiver-operating-characteristic curve of the confidence score against observed improvement is computed and Youden's J maximised. Fourth, the procedure is repeated over 2,000 bootstrap resamples to obtain a confidence interval for the optimal cutoff.`,
+      `Each criterion is scored from 0 to 10 for each answer, for a maximum of 80 per answer, and each score requires a one-sentence justification.`,
+      `Factual Correctness: whether the facts stated are accurate. Catches confident but incorrect dates, figures and names.`,
+      `Question Relevance: whether the answer addresses the question actually asked. Catches answers that drift to an adjacent, easier question.`,
+      `Context Relevance: consistency with supplied reference material, or, where none was supplied, whether the answer remains on topic.`,
+      `Faithfulness: whether the claims made are supportable rather than invented. Catches plausible but unsupported specifics.`,
+      `Completeness: whether the answer covers the question adequately. Catches answers addressing only one half of a two-part question.`,
+      `Hallucination-Free: absence of fabricated specifics such as invented citations, statistics or quotations.`,
+      `Clarity: structure and readability. A correct answer the reader cannot follow is of limited use.`,
+      `Consistency: absence of internal self-contradiction within the answer.`,
+      `Totals are recomputed from the criterion scores rather than read from the model's stated total, because evaluators were observed reporting totals inconsistent with their own scores.`,
     ],
   },
   {
-    title: "Appendix D: Combiner Bias Measurement Procedure",
+    title: "Appendix D: Confidence Score Computation",
     paras: [
-      `For each final record the two candidate answers and the final answer are embedded with the same encoder used elsewhere in the pipeline. The difference in cosine similarity between the final answer and each candidate gives a signed preference. Mapping that preference onto model identity using the recorded position mapping yields the identity lean; leaving it in slot terms yields the position lean. Crossing the two, and further crossing by the Judge's verdict, separates effects that are conflated in the marginal figures.`,
-      `The controlled replay freezes the question, both candidates and both evaluator outputs, and varies only the Combiner model and the presentation order. When the order is swapped, the "Answer 1" and "Answer 2" references inside the evaluator text are remapped accordingly; without that remapping the Combiner would receive a verdict pointing at the wrong candidate, which would contaminate the measurement.`,
+      `For the set S of signals available for a given answer, with values v normalised to the range [0, 1] and nominal weights w from Table 3.3, the weighted confidence score is the sum over S of v multiplied by w, divided by the sum over S of w.`,
+      `The division renormalises the weights across whichever signals are present, so the score remains on the same scale regardless of how many contributed. The Judge's rubric total is normalised by division by eighty; the remaining signals are natively in range.`,
+      `A signal is unavailable when its source produced nothing - most commonly when an external encyclopedia check found no sufficiently relevant article or entity. Returning nothing rather than a low score is deliberate: it avoids conflating "unverifiable" with "wrong", which would penalise questions about obscure topics for the absence of an encyclopedia entry.`,
+      `Deliberately excluded are any signals referenced against the final combined answer. Such signals were found to be biased toward whichever candidate the Combiner had been built from, for the reasons quantified in Section 5.8.`,
+    ],
+  },
+  {
+    title: "Appendix E: Database Schema",
+    paras: [
+      `One row is written per attempt into the pipeline_runs table. The principal columns are as follows.`,
+      `Identity and sequencing: id (primary key), question_idx, question, attempt_number, is_final_attempt.`,
+      `Candidates and provenance: answer_a, answer_b, model_a, model_b - the last two recording which physical model occupied which prompt slot for this question, which is what makes the identity analyses in Section 5.8 possible after the fact.`,
+      `Raw evaluator output: verifier_raw, judge_raw - the complete text returned by each evaluator, retained so that an analysis months later can reconstruct exactly what each evaluator saw.`,
+      `Parsed scores: for each of the eight criteria, four columns - verifier and judge, answer A and answer B - plus verifier_total_a, verifier_total_b, judge_total_a, judge_total_b and winner.`,
+      `Signals: sem_sim_a, sem_sim_b, length_score_a, length_score_b, word_count_a, word_count_b, model_agreement, verifier_judge_agreement, wikipedia_score, wikipedia_source, wikidata_score, wikidata_source.`,
+      `Outcome: weighted_score, regen_reason, final_answer, elapsed_secs, created_at.`,
+      `Indexes on question_idx and is_final_attempt were added after a paginated browse query over the full corpus began timing out at high offsets; with them the worst-case page load returns in under a fifth of a second.`,
+    ],
+  },
+  {
+    title: "Appendix F: Threshold Calibration Procedure",
+    paras: [
+      `The calibration proceeds in five steps.`,
+      `First, a control group is formed: a random fraction of answers passing the gate are regenerated regardless, producing observations the gate would otherwise censor.`,
+      `Second, each record is weighted by the inverse of the control probability actually in force when it was generated. That probability changed from 0.08 to 0.60 partway through the run, so records carry weight 12.5 or approximately 1.667 accordingly, while census records - those regenerated because they genuinely failed the gate - carry weight 1.0.`,
+      `Third, an improvement label is derived for each record from the five non-judge signals. The Judge is deliberately excluded from the improvement criterion to avoid circularity, since the Judge's own score is the dominant input to the threshold being calibrated.`,
+      `Fourth, the receiver-operating-characteristic curve is computed over a grid of candidate cutoffs from 0.50 to 0.86 in steps of 0.01, and Youden's J maximised.`,
+      `Fifth, the whole procedure is repeated over 2,000 bootstrap resamples of the labelled question set, with weights preserved, to obtain a confidence interval for the location of the optimum.`,
+      `The analysis is reproducible by running training/optimal_threshold_roc.py. The figures in Section 5.7 are produced by make_figures.py, which imports that script's own functions and uses its grid and random seed, so that the plates cannot drift from the numbers in the text.`,
+    ],
+  },
+  {
+    title: "Appendix G: Combiner Bias Measurement Procedure",
+    paras: [
+      `For each final record, the two candidate answers and the final answer are embedded with all-MiniLM-L6-v2, the same encoder used elsewhere in the pipeline. The difference in cosine similarity between the final answer and each candidate gives a signed preference for that record.`,
+      `Mapping that preference onto model identity using the recorded model_a and model_b columns yields the identity lean; leaving it in slot terms yields the position lean. Crossing the two, and further crossing by the Judge's recorded verdict, separates effects that are conflated in the marginal figures - which is necessary here, because the two effects point the same way and the marginal number is therefore misleading on its own.`,
+      `Length is controlled in two ways: as a correlation between the word-count advantage and the preference, and by restricting the analysis to pairs whose word counts fall within ten per cent of one another.`,
+      `The controlled replay freezes the question, both candidates and both evaluator outputs, and varies only the Combiner model and the presentation order. When the order is swapped, the "Answer 1" and "Answer 2" references inside the evaluator text are remapped accordingly; without that remapping the Combiner would receive a verdict pointing at the wrong candidate, contaminating the measurement.`,
+      `The analysis is reproducible by running training/combiner_bias_analysis.py, and the replay by training/combiner_replay.py.`,
+    ],
+  },
+  {
+    title: "Appendix H: Full ROC Table",
+    paras: [
+      `The complete sampling-corrected receiver-operating-characteristic table underlying Section 5.7 and Figure 5.4. At each candidate cutoff t, an answer is "flagged" if its attempt-1 confidence score falls below t. Sensitivity is the weighted fraction of truly improvable answers correctly flagged; specificity is the weighted fraction of truly satisfactory answers correctly left alone. Youden's J is their sum less one. Area under the curve: 0.6291.`,
+    ],
+    table: {
+      caption: "Table H.1: Sampling-corrected ROC across all candidate cutoffs",
+      head: ["t", "n flagged", "n ok", "Sensitivity", "Specificity", "Youden J"],
+      rows: [
+        ["0.50", "31", "1973", "1.2%", "99.5%", "0.0074"],
+        ["0.55", "71", "1933", "2.7%", "98.7%", "0.0139"],
+        ["0.60", "199", "1805", "7.3%", "96.3%", "0.0366"],
+        ["0.63", "362", "1642", "12.7%", "92.7%", "0.0541"],
+        ["0.64", "452", "1552", "15.9%", "90.9%", "0.0679"],
+        ["0.65", "565", "1439", "19.8%", "88.5%", "0.0827"],
+        ["0.66", "720", "1284", "25.0%", "85.1%", "0.1005"],
+        ["0.67", "896", "1108", "30.6%", "80.9%", "0.1158"],
+        ["0.68", "1128", "876", "38.2%", "75.6%", "0.1383"],
+        ["0.69", "1245", "759", "47.7%", "69.6%", "0.1727"],
+        ["0.70", "1360", "644", "54.6%", "64.4%", "0.1897"],
+        ["0.71", "1464", "540", "59.7%", "58.4%", "0.1807"],
+        ["0.72", "1593", "411", "66.7%", "50.3%", "0.1697"],
+        ["0.73", "1707", "297", "75.0%", "43.9%", "0.1897"],
+        ["0.74", "1825", "179", "81.7%", "36.2%", "0.1792"],
+        ["0.75", "1915", "89", "86.7%", "30.2%", "0.1688"],
+        ["0.76", "1937", "67", "89.7%", "22.3%", "0.1199"],
+        ["0.78", "1968", "36", "97.3%", "14.7%", "0.1200"],
+        ["0.80", "2000", "4", "100.0%", "2.3%", "0.0235"],
+        ["0.83", "2004", "0", "100.0%", "0.0%", "0.0000"],
+      ],
+    },
+    paras2: [
+      `Two features of the table deserve comment. The maximum of J is attained twice, at 0.70 and again at 0.73, both at 0.1897 - which is the flatness described in Section 5.7 made explicit rather than asserted. And above 0.80 the specificity collapses toward zero while sensitivity saturates at 100 per cent: at those cutoffs essentially every answer is flagged, the gate stops discriminating, and the regeneration loop would run on almost every question to no purpose.`,
+    ],
+  },
+  {
+    title: "Appendix I: A Worked Example",
+    paras: [
+      `One complete record from the corpus, traced through the pipeline. Question index 4: "How does a neural network learn from data?"`,
+      `Position assignment for this question put Mistral in slot A and LLaMA 3 in slot B. The Judge declared answer B the winner, with rubric totals of 70 for A and 75 for B; the Verifier, scoring independently, reached the opposite ordering at 75 for A and 68 for B. This disagreement is exactly the situation the Verifier-Judge agreement signal exists to detect, and it scored 0.925 - high, because the agreement measure compares the evaluators' assessment of the winning answer rather than requiring them to pick the same winner.`,
+    ],
+    table: {
+      caption: "Table I.1: Signals for question 4, attempt 2",
+      head: ["Signal", "Value", "Weight", "Contribution"],
+      rows: [
+        ["Judge rubric total (B)", "75 / 80 = 0.938", "0.40", "0.375"],
+        ["Semantic similarity (B)", "0.650", "0.15", "0.097"],
+        ["Wikipedia check", "0.438", "0.15", "0.066"],
+        ["Model agreement (BERTScore A–B)", "0.098", "0.10", "0.010"],
+        ["Verifier–Judge agreement", "0.925", "0.10", "0.093"],
+        ["Wikidata check", "0.404", "0.10", "0.040"],
+        ["Weighted confidence score", "—", "1.00", "0.681"],
+      ],
+    },
+    paras2: [
+      `The winning answer's per-criterion scores from the Judge were 9, 9, 9, 10, 9, 10, 10, 9 across the eight criteria in rubric order, totalling 75. The Verifier scored the same answer 8, 8, 8, 9, 8, 9, 9, 9, totalling 68 - the systematic leniency gap of Section 5.5 running in the opposite direction here, which is a reminder that it is a tendency across 5,000 records rather than a rule holding on each.`,
+      `The attempt history shows the gate working and then exhausting itself. Attempt 1 scored 0.6744, below the threshold, and triggered a regeneration. Attempt 2 scored 0.6808 - an improvement, but still below 0.72. The attempt bound was reached and the better of the two was shipped. This record is therefore one of the 1,849 final answers, 37.0 per cent of the corpus, that ship below the confidence threshold because the pipeline could not do better within its attempt budget.`,
+      `Two further details are visible in this record. Model agreement is 0.098, very low: the two generators produced substantively different explanations of the same concept, which is the expected behaviour described in Section 5.6 and the reason that signal contributes only 0.010 to the final score here. And the shipped answer runs to 285 words against a prompt instruction of at most 150 - this record predates the Combiner change of Section 5.8, and the instruction-following failure it illustrates was one of the secondary reasons for that change.`,
+    ],
+  },
+  {
+    title: "Appendix J: Verbatim Evaluator Output",
+    paras: [
+      `A complete, unedited Judge output from the corpus, for the question "What is epigenetics?". It is reproduced to show the structure the parser consumes and the quality of justification the rubric elicits. Only the first answer's block is shown; the second follows the same form, after which the Judge declares a winner and gives an overall reasoning paragraph.`,
+      `## Answer 1`,
+      `- Factual Correctness: 9/10 | The definitions of epigenetics and the four listed mechanisms (DNA methylation, histone modification, chromatin remodeling, non-coding RNA) are scientifically accurate and standard.`,
+      `- Question Relevance: 10/10 | Every sentence directly defines or elaborates on epigenetics without including unrelated tangents or generic introductions.`,
+      `- Context Relevance: 9/10 | The answer aligns perfectly with general scientific consensus on epigenetics since no specific external context was provided to contradict.`,
+      `- Faithfulness: 9/10 | All claims regarding mechanisms and biological roles are grounded in established biological knowledge without fabrication.`,
+      `- Completeness: 9/10 | The response covers the definition, causes, specific mechanisms, and key biological implications comprehensively.`,
+      `- Hallucination-Free: 10/10 | No invented statistics, names, or false causal links were introduced; all examples are standard textbook instances.`,
+      `- Clarity: 9/10 | The use of numbered lists for mechanisms and processes makes the complex information easy to scan and understand.`,
+      `- Consistency: 9/10 | No internal contradictions appear between the definition given and the mechanisms subsequently described.`,
+      `Three properties of this output are worth drawing out. The justifications reference specific content from the answer rather than restating the criterion, which is what the prompt asks for and what distinguishes a usable score from a reflexive one. The scores are differentiated across criteria rather than uniform, which is the property that disqualified a candidate judge in Section 5.3. And the Context Relevance justification explicitly notes that no external context was supplied and states how it scored in that case - the fallback behaviour defined in the rubric, correctly applied.`,
+      `The output is also the reason totals are recomputed rather than trusted. The eight scores above sum to 74; an evaluator that states its own total introduces an opportunity for arithmetic that does not match, and such mismatches were observed.`,
+    ],
+  },
+  {
+    title: "Appendix K: Glossary of Terms as Used in This Report",
+    paras: [
+      `Several terms in this report carry a narrower meaning than their general usage, and a few are used in a sense that differs from a common one. They are defined here as used.`,
+    ],
+    table: {
+      caption: "Table K.1: Terms as used in this report",
+      head: ["Term", "Meaning as used here"],
+      rows: [
+        ["Attempt", "One pass through stages 1-5 for a question. A question may have up to three."],
+        ["Final answer", "The output of the Combiner for the highest-scoring attempt of a question."],
+        ["Candidate", "One of the two independently generated answers, before synthesis."],
+        ["Confidence score", "The weighted blend of six signals, in [0,1]. A ranked quality signal, NOT a probability of correctness."],
+        ["Calibrated", "Of the threshold: chosen by diagnostic-test methodology. NOT calibration in the probabilistic sense (see Section 2.9)."],
+        ["Label-free", "Requiring no human-annotated ground truth at any point, including for validation."],
+        ["Censored data", "Observations the system structurally never produces, because the gate it would inform prevents them."],
+        ["Control group", "Answers regenerated despite passing the gate, purely to produce censored observations."],
+        ["Position / slot", "Which of the two prompt positions a candidate occupied for a given question."],
+        ["Identity", "Which physical model produced a candidate, independent of its position."],
+        ["Lean", "The signed difference in similarity between the final answer and each candidate."],
+        ["Discrimination", "An evaluator's capacity to score good and bad answers differently."],
+        ["Blind", "An evaluator sees neither model identity nor the other evaluator's scores."],
+        ["Census row", "A record regenerated because it genuinely failed the gate; sampling weight 1.0."],
+        ["Sensitivity", "Of improvable answers, the weighted fraction correctly flagged for regeneration."],
+        ["Specificity", "Of satisfactory answers, the weighted fraction correctly left alone."],
+      ],
+    },
+    paras2: [
+      `Two of these warrant emphasis because misreading them would misrepresent the system's claims. The confidence score is a ranked signal, not a probability: a score of 0.80 means better supported than 0.60, not 80 per cent likely to be correct. And "calibrated" throughout this report refers to the choice of an operating point on that ranking, in the sense used in diagnostic testing, not to agreement between stated confidence and empirical accuracy - which, as Section 2.9 explains, cannot be established without the ground truth this methodology deliberately does without.`,
+    ],
+  },
+  {
+    title: "Appendix L: Reproducing the Results",
+    paras: [
+      `The pipeline is started by running the model runtime, then the web service, and opening the local address it prints. The batch harness generates the corpus and is restartable.`,
+      `The analyses reported in Chapter 5 are each a single script. training/optimal_threshold_roc.py performs the threshold calibration and prints the ROC table, the AUC, the Youden optimum and the bootstrap interval. training/combiner_bias_analysis.py performs the bias decomposition over the full corpus and writes a per-record cache so that follow-up analysis requires no re-encoding. training/combiner_replay.py runs the controlled replay and scores it.`,
+      `deliverables/report/make_figures.py regenerates every figure in Chapter 5 from the live corpus, and deliverables/report/build_report.js rebuilds this document.`,
+      `Hardware used: a single workstation with an NVIDIA RTX 4090, 24 GB of video memory. The six models exceed that if co-resident, so the pipeline runs at concurrency one and the runtime evicts weights between stages.`,
     ],
   },
 ];
 
 module.exports = {
   PLACEHOLDER, TITLE, TITLE_SENTENCE, ACKNOWLEDGEMENT, ABSTRACT,
-  ABBREVIATIONS, FIGURES, TABLES, CHAPTERS, REFERENCES, APPENDICES,
+  ABBREVIATIONS, FIGURES, FIGURE_ORDER, TABLES, CHAPTERS, REFERENCES, APPENDICES,
 };

@@ -310,9 +310,13 @@ function chapterBlocks() {
       if (sec.bullets) out.push(...bullets(sec.bullets));
       if (sec.table) out.push(...makeTable(sec.table));
       (sec.paras2 || []).forEach((p) => out.push(body(p)));
-      // place any figure anchored to this chapter and section
-      C.FIGURES.filter((f) => f.chapter === ci + 1 && f.after === sec.heading)
-        .forEach((f) => out.push(...figureBlock(f)));
+      // figures are referenced by key; a section may carry up to two
+      for (const key of [sec.figure, sec.figure2]) {
+        if (!key) continue;
+        const f = C.FIGURES[key];
+        if (!f) { console.warn(`  ! unknown figure key "${key}" in ${sec.heading}`); continue; }
+        out.push(...figureBlock(f));
+      }
     });
   });
   return out;
@@ -329,7 +333,9 @@ function backMatter() {
   C.APPENDICES.forEach((a) => {
     out.push(h2(a.title));
     // the format requires appendices at 10 pt
-    a.paras.forEach((p) => out.push(body(p, { size: SZ_SMALL })));
+    (a.paras || []).forEach((p) => out.push(body(p, { size: SZ_SMALL })));
+    if (a.table) out.push(...makeTable(a.table));
+    (a.paras2 || []).forEach((p) => out.push(body(p, { size: SZ_SMALL })));
   });
   return out;
 }
@@ -397,7 +403,8 @@ const doc = new Document({
           hyperlink: true, headingStyleRange: "1-2",
         }),
         pageBreak(),
-        ...listLines("List of Figures", C.FIGURES.map((f) => `Figure ${f.n}    ${f.caption}`)),
+        ...listLines("List of Figures",
+          C.FIGURE_ORDER.map((k) => `Figure ${C.FIGURES[k].n}    ${C.FIGURES[k].caption}`)),
         pageBreak(),
         ...listLines("List of Tables", C.TABLES.map(([n, t]) => `Table ${n}    ${t}`)),
         pageBreak(),
