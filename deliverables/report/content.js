@@ -14,15 +14,17 @@
 
 const PLACEHOLDER = {
   students: [
-    { name: "[STUDENT 1 NAME]", roll: "[ROLL NO.]", email: "[email]@vit.edu.in" },
-    { name: "[STUDENT 2 NAME]", roll: "[ROLL NO.]", email: "[email]@vit.edu.in" },
-    { name: "[STUDENT 3 NAME]", roll: "[ROLL NO.]", email: "[email]@vit.edu.in" },
-    { name: "[STUDENT 4 NAME]", roll: "[ROLL NO.]", email: "[email]@vit.edu.in" },
+    { name: "Swaroop Naik",     roll: "23102A0001", email: "swaroop.naik@vit.edu.in" },
+    { name: "Nidhi Bhawari",    roll: "23102A0006", email: "nidhi.bhawari@vit.edu.in" },
+    { name: "Devanshi Mahajan", roll: "23102A0069", email: "devanshi.mahajan@vit.edu.in" },
   ],
-  guide: "Prof. [GUIDE NAME]",
-  guideDesignation: "[Designation]",
-  hod: "[HEAD OF DEPARTMENT]",
-  principal: "[PRINCIPAL]",
+  guide: "Dr. Suja Jayachandran",
+  // Inferred from the institutional firstname.lastname pattern that all three
+  // student addresses follow - CONFIRM before submission.
+  guideEmail: "suja.jayachandran@vit.edu.in",
+  guideDesignation: "",
+  hod: "Ravindra Sangale",
+  principal: "Sangeeta Joshi",
   groupId: "[GROUP ID]",
 };
 

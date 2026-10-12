@@ -93,13 +93,18 @@ TB8 = {
 }
 TB14 = {
     0: [("Name of Project Guide :", True),
-        (" [GUIDE NAME] ([guide.email]@vit.edu.in)", False)],
+        (" Dr. Suja Jayachandran (suja.jayachandran@vit.edu.in)", False)],
     2: [("Name of Students :", True), (" ", True),
-        ("[STUDENT 1] ([email]@vit.edu.in)", False)],
-    3: [(" " * 40 + "[STUDENT 2] ([email]@vit.edu.in)", False)],
-    4: [(" " * 40 + "[STUDENT 3] ([email]@vit.edu.in)", False)],
-    5: [(" " * 40 + "[STUDENT 4] ([email]@vit.edu.in)", False)],
+        ("Swaroop Naik (swaroop.naik@vit.edu.in)", False)],
+    3: [(" " * 40 + "Nidhi Bhawari (nidhi.bhawari@vit.edu.in)", False)],
+    4: [(" " * 40 + "Devanshi Mahajan (devanshi.mahajan@vit.edu.in)", False)],
+    5: [("", False)],          # the template allowed for a fourth student
 }
+
+# The template's own group-photograph slot (a wide 2.52-aspect strip). The
+# supplied photo is 4:3, so it is cropped to the slot's aspect - framed on
+# heads-to-torso rather than the empty wall above - instead of being stretched.
+GROUP_PHOTO = (SHOTS.parent / "group_photo_slot.jpg", "image10.png")
 
 # slot -> (source image, published media name, width in inches)
 # heights all stay at the template's 0.82in; widths follow each image's own aspect
@@ -209,6 +214,18 @@ def main() -> None:
         print(f"  {name:<11} <- {src.name:<20} {w:.3f}x{h} in  "
               f"(img {im.size[0]}x{im.size[1]}, aspect {im.size[0]/im.size[1]:.2f})")
         x += w + gap
+
+    # group photograph into the template's own photo slot (Picture 16)
+    src, media_name = GROUP_PHOTO
+    if src.exists():
+        Image.open(src).convert("RGB").save(MEDIA / media_name, "PNG")
+        pic = shape_by_name(root, "Picture 16")
+        if pic is not None:
+            nv = pic.find(f".//{q(P, 'cNvPr')}")
+            nv.set("descr", "Project team with the project guide")
+            print(f"  Picture 16  <- {src.name} (group photograph)")
+    else:
+        print(f"  ! group photo not found at {src}, slot left as placeholder")
 
     tree.write(str(SLIDE), xml_declaration=True, encoding="UTF-8", standalone=True)
 

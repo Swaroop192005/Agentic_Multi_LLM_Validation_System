@@ -145,7 +145,7 @@ function titlePage() {
     ...blank(1),
     centred("Under the Guidance of"),
     centred(C.PLACEHOLDER.guide, { bold: true }),
-    centred(C.PLACEHOLDER.guideDesignation),
+    ...(C.PLACEHOLDER.guideDesignation ? [centred(C.PLACEHOLDER.guideDesignation)] : []),
     ...blank(2),
     centred("Department of Computer Engineering", { bold: true }),
     centred("(An Autonomous Institute Affiliated to University of Mumbai)"),

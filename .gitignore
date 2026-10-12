@@ -49,3 +49,9 @@ deliverables/videas/unpacked/
 deliverables/node_modules/
 deliverables/package-lock.json
 deliverables/package.json
+
+# Group photograph and the deck that embeds it. This repository is PUBLIC, so
+# the team's photo is held back from it deliberately - the file is produced
+# locally by deliverables/videas/fill_template.py and handed over directly.
+# Remove these two lines if the team decides the photo may be published.
+deliverables/group_photo_slot.jpg
