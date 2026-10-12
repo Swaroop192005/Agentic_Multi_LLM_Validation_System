@@ -344,11 +344,28 @@ const CH5 = {
     {
       heading: "Evaluator Bias: the Correction and its Limits",
       paras: [
-        `The Combiner was reassigned to gemma2:9b, a model that is neither generator, nor the Verifier, nor the Judge. This removes the identity term by construction rather than reducing it: a model with no answer of its own among the two it is merging has nothing to prefer.`,
+        `The Combiner was reassigned to gemma2:9b, a model that is neither generator, nor the Verifier, nor the Judge. The reasoning was that this removes SELF-preference by construction rather than reducing it: a model with no answer of its own among the two it is merging has nothing of its own to prefer. That reasoning is sound as far as it goes, but it does not follow that the replacement is therefore unbiased - a point the measurement below makes, and which would have been missed had the change been adopted on the argument alone.`,
         `A controlled replay was built to verify this rather than assume it. Because the Combiner is strictly terminal - the confidence score never takes the final answer as an input, and the Combiner runs once after the regeneration loop closes - every one of its inputs is already stored per record. The Combiner can therefore be re-run in isolation across the existing corpus, with the question, both candidates and both evaluator outputs frozen, and only the model varied. The design crosses two models against two presentation orders, so that averaging the orders within a question cancels position exactly and isolates identity, while comparing them isolates position.`,
         `The replay required one precaution that is easy to overlook. When the presentation order is swapped, the "Answer 1" and "Answer 2" references inside the stored evaluator text must be remapped to match; without that, the Combiner receives a verdict pointing at the wrong candidate, which contaminates the very effect being measured.`,
-        `At the time of writing the replay is partially complete - the baseline arm has finished and the candidate arm is in progress - and its figures are therefore reported as provisional. The indication is that the replacement is close to position-neutral where the original preferred the first slot in roughly four cases out of five. A final figure awaits completion of the run.`,
-        `What the change does not fix is the position effect. That is a property of how a transformer reads a prompt in order, not of model identity, so changing the model cannot address it; and the per-question coin flip only makes it unbiased with respect to identity rather than absent. Roughly 61 per cent of final answers remain dominated by one slot rather than genuinely merged. This is recorded as an open problem, and Chapter 8 discusses extractive selection as a candidate remedy that would eliminate it by construction.`,
+        `The replay is now complete: 400 questions across two models and two presentation orders, 1,600 synthesis calls, with no failures. Its results are given in Table 5.8, and they are more nuanced than "the replacement worked".`,
+      ],
+      table: {
+        caption: "Table 5.8: Controlled replay, 400 questions × 2 models × 2 orders",
+        head: ["Measure", "llama3 (baseline)", "gemma2:9b (adopted)"],
+        rows: [
+          ["Prefers prompt slot 1", "80.5%", "50.7%"],
+          ["Leans toward the LLaMA 3 candidate", "62.7%", "35.2%"],
+          ["Distance from 50/50 parity on identity", "12.7 pp", "14.8 pp"],
+          ["Same, with answer length controlled", "15.5 pp", "7.3 pp"],
+          ["Mean output length (cap: 150 words)", "223 words (max 543)", "131 words (max 199)"],
+        ],
+      },
+      paras2: [
+        `The position result is unambiguous and is the most important line in the table. Where the original Combiner tracked whichever answer it read first in 80.5 per cent of questions, the replacement does so in 50.7 per cent - within a single percentage point of perfect neutrality. This was not expected. The position effect had been described earlier in this chapter as a property of prompt reading rather than of model identity, and therefore as something a model swap could not address; the measurement contradicts that reasoning, and the reasoning was wrong rather than the measurement.`,
+        `The identity result does not support the simpler claim that might have been made, and is reported as it stands. The replacement does not land on parity: it leans toward the Mistral candidate in 64.8 per cent of questions, which is 14.8 points from parity against the original's 12.7 points in the opposite direction. On the raw identity measure the replacement is marginally worse, and the lean has changed sign rather than disappeared.`,
+        `That lean cannot be self-preference, because gemma2:9b has no answer of its own among the two it is merging. The obvious candidate explanation is length, and testing it accounts for about half the gap. The replacement compresses hard - 131 words on average against the original's 223 - so it must discard more, and the LLaMA 3 candidate is the longer source at 366 words against 317. Restricting to length-matched pairs moves the replacement from 35.2 per cent to 42.7 per cent, which is 7.3 points from parity; the same restriction moves the original the other way, from 62.7 to 65.5 per cent, confirming that length never explained the original's bias.`,
+        `The honest summary is therefore three-part. The replacement eliminates the position effect, which was the larger structural defect. It eliminates self-preference by construction, since it has no self. It introduces a smaller, length-mediated lean toward the shorter source, which is a different and more tractable problem than an evaluator favouring its own output, and which an extractive selector would remove entirely. It also respects the 150-word instruction that the original exceeded by up to a factor of 3.6.`,
+        `What remains unaddressed is that the per-question coin flip only ever made the position effect unbiased with respect to identity rather than absent - and for the live service, which fixed LLaMA 3 in slot one, not even that. Chapter 8 discusses extractive selection as the remedy that would remove both the residual position sensitivity and the length-mediated lean by construction.`,
       ],
     },
     {

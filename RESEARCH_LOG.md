@@ -1594,3 +1594,64 @@ are still dominated by one slot rather than genuinely merged.
 - A useful by-product: for an MMR arm the true source split is known by
   construction, so it calibrates the embedding-lean metric used throughout this
   section.
+
+---
+
+## 38. Tier 1 replay complete: the combiner swap fixes position, not identity
+
+The controlled replay promised in Section 37 is finished: 400 questions x
+{llama3, gemma2:9b} x {forward, swapped order}, 1,600 synthesis calls in 22.1
+minutes, zero failures. Every other input frozen; only the combiner model and the
+presentation order vary. Averaging the two orders within a question cancels
+position exactly and isolates identity; comparing them isolates position.
+
+| Measure | llama3 (baseline) | gemma2:9b (adopted) |
+|---|---|---|
+| Prefers prompt slot 1 | **80.5%** | **50.7%** |
+| Leans toward the LLaMA 3 candidate | 62.7% | 35.2% |
+| Distance from 50/50 parity on identity | 12.7 pp | **14.8 pp** |
+| Same, length-controlled | 15.5 pp | **7.3 pp** |
+| Mean output length (cap 150) | 223 words (max 543) | 131 words (max 199) |
+
+### The position result, and a thing I got wrong
+
+80.5% -> 50.7%, within a point of perfect neutrality. Section 37 asserted that
+the position effect is "a property of how a transformer reads a prompt, not of
+model identity, so changing the model cannot address it". That was wrong. The
+measurement contradicts the argument, and the argument loses. gemma2:9b is
+position-neutral on this task in a way llama3 emphatically is not, and had the
+swap been adopted on reasoning alone this would never have surfaced.
+
+### The identity result does not support the easy claim
+
+The replacement does not land on parity. It leans toward Mistral in 64.8% of
+questions - 14.8 pp from parity, against the baseline's 12.7 pp the other way.
+On the raw identity measure it is marginally WORSE, and the lean has changed
+sign rather than disappeared.
+
+It cannot be self-preference: gemma2 has no answer of its own among the two it
+merges. Length was the obvious candidate and explains about half of it. gemma2
+compresses hard (131 words vs 223), so it discards more, and the llama3
+candidate is the longer source (366 vs 317 words). Restricting to length-matched
+pairs moves gemma2 from 35.2% to 42.7% (7.3 pp from parity) and moves llama3 the
+*other* way, 62.7% -> 65.5% - reconfirming that length never explained the
+baseline's self-preference.
+
+### Verdict
+
+The swap is justified, but not for the reason originally given.
+
+- Position effect: **eliminated** (the larger structural defect).
+- Self-preference: **eliminated by construction** (no self to prefer).
+- New: a smaller, length-mediated lean toward the shorter source. A different and
+  more tractable problem than an evaluator favouring its own output.
+- Instruction-following: 150-word cap now respected (max 199 vs 543).
+
+Length-controlled, gemma2 sits 7.3 pp from parity against llama3's 15.5 pp, so it
+is better on the like-for-like comparison even on the identity axis.
+
+The report's claim that the swap "removes the identity term by construction" was
+overstated and has been corrected in Section 5.9 and the abstract. An extractive
+selector (Section 37, open items) would remove both the residual position
+sensitivity and the length-mediated lean by construction, and remains the right
+long-term answer.
