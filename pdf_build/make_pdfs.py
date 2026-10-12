@@ -56,22 +56,52 @@ DOC_PRINT_CSS = """
 """
 
 # Print CSS for the conference poster. FYP_POSTER.html is a fixed 1060px-wide
-# layout with no print rules of its own, and its content measures 1060 x 1732 CSS
-# px - an aspect ratio of 1:1.634. That is TALLER than A1 portrait (1:1.416), so
-# forcing @page size:A1 would letterbox it with dead bands down both sides. The
-# page is therefore sized to the artwork itself (a few px of slack so nothing
-# clips at the edge), giving a pixel-exact single page that a print shop can
-# scale proportionally to A1 or A0 without distortion.
-POSTER_PRINT_CSS = """
+# layout with no print rules of its own, so the @page must be sized to the
+# artwork or the PDF either clips it or leaves a dead band at the foot.
+#
+# The height is MEASURED rather than hardcoded. A constant here goes stale the
+# moment the poster's content changes length - which it did: the rewrite took it
+# from 1732px to 1515px, and a stale 1738px page would have printed 223px of
+# blank paper. poster_height() renders the page tall, finds the last row that
+# differs from the page background, and sizes @page to that.
+POSTER_CSS_TEMPLATE = """
 <style>
-@media print {
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  @page { size: 1064px 1738px; margin: 0; }
-  html, body { margin: 0 !important; padding: 0 !important; background: #fff; }
-  .poster, body > div { box-shadow: none !important; }
-}
+@media print {{
+  * {{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
+  @page {{ size: {w}px {h}px; margin: 0; }}
+  html, body {{ margin: 0 !important; padding: 0 !important; background: #fff; }}
+  .poster, body > div {{ box-shadow: none !important; }}
+}}
 </style>
 """
+
+POSTER_WIDTH = 1060
+
+
+def poster_height(src: Path, probe_height: int = 16000) -> int:
+    """Render the poster tall and measure where its content actually ends."""
+    probe = BUILD / "_poster_probe.png"
+    subprocess.run(
+        [chrome(), "--headless", "--disable-gpu", "--hide-scrollbars",
+         "--virtual-time-budget=8000",
+         f"--window-size={POSTER_WIDTH},{probe_height}",
+         f"--screenshot={probe.as_posix()}", src.resolve().as_uri()],
+        capture_output=True, text=True, timeout=180,
+    )
+    try:
+        from PIL import Image
+        import numpy as np
+        im = Image.open(probe).convert("RGB")
+        a = np.asarray(im)
+        diff = (np.abs(a.astype(int) - a[-1].astype(int)).sum(axis=2) > 12).any(axis=1)
+        rows = np.nonzero(diff)[0]
+        h = int(rows.max()) + 1 if len(rows) else probe_height
+    except Exception as e:                       # measurement is best-effort
+        print(f"  ! could not measure poster ({e}); falling back to 1740px")
+        h = 1740
+    finally:
+        probe.unlink(missing_ok=True)
+    return h
 
 # Print CSS for the slide deck: one landscape page per slide, chrome hidden.
 DECK_PRINT_CSS = """
@@ -175,8 +205,12 @@ def main():
     # 3c: conference poster (lives at the repo root, not in docs/)
     poster = ROOT / "FYP_POSTER.html"
     if poster.exists():
+        h = poster_height(poster)
+        print(f"  poster content measures {POSTER_WIDTH} x {h} px "
+              f"(aspect 1:{h / POSTER_WIDTH:.3f})")
+        css = POSTER_CSS_TEMPLATE.format(w=POSTER_WIDTH + 4, h=h + 6)  # a little slack
         poster_pr = BUILD / "FYP_POSTER_print.html"
-        make_print_html(poster, POSTER_PRINT_CSS, poster_pr)
+        make_print_html(poster, css, poster_pr)
         render_pdf(poster_pr, OUT / "fyp-poster.pdf", landscape=False)
 
     # 4: research log (markdown -> html -> pdf)

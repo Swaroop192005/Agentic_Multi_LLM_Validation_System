@@ -233,18 +233,18 @@
     <div class="header-center">
       <div class="dept">Department of Computer Engineering</div>
       <div class="sem">Final Year Project – Semester 7 &amp; 8</div>
-      <div class="year">Academic Year 2025–2026</div>
-      <div class="title">Hybrid Agentic LLM Evaluation Framework<br>with Custom-Trained Neural Judge &amp; Human Feedback Loop</div>
+      <div class="year">Academic Year 2026–27</div>
+      <div class="title">Agentic Multi-LLM Validation System<br>Label-Free Quality Assurance for Locally Hosted Large Language Models</div>
       <div class="group">Group ID: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
     </div>
 
     <!-- NAMES -->
     <div class="header-names">
-      Name 1<br>
-      Name 2<br>
-      Name 3<br>
-      Name 4<br>
-      <span style="margin-top:6px;display:block">Guide Name</span>
+      Swaroop Naik<br>
+      Nidhi Bhawari<br>
+      Devanshi Mahajan<br>
+      <span style="margin-top:6px;display:block">Guide: Dr. Suja Jayachandran</span>
+
     </div>
   </div>
 
@@ -261,9 +261,9 @@
       <div class="section">
         <div class="section-title h-blue">Abstract</div>
         <div class="section-body">
-          <p>Large Language Models (LLMs) are prone to hallucinations and inconsistency, making automated quality evaluation critical yet difficult. This final year project proposes a <b>Hybrid Agentic LLM Evaluation Framework</b> that orchestrates six specialized AI agents — two competing generator LLMs (LLaMA 3 and Mistral), an independent fact-verifier (phi3), a semantic scorer, an LLM judge (qwen3.5:9b), and a bias-free combiner (Gemma 2 9B) — to produce high-quality, verified answers entirely offline.</p>
-          <p>The system self-generates a 1,000-sample labeled training dataset where each record captures both candidate answers, five-criterion judge scores (Factual Accuracy, Completeness, Clarity, Relevance, Depth), semantic similarity metrics, and the declared winner. This dataset is then used to fine-tune a <b>BERT-based neural regression model</b> that replicates the judge's behavior at millisecond speed — replacing the slow LLM judge (~5–6 min) without sacrificing interpretability.</p>
-          <p>A human feedback loop further improves model accuracy over time. The entire system runs <b>100% locally with no paid APIs</b>, making it suitable for privacy-sensitive deployments. Results show the combined answer consistently outperforms either individual model, and the custom neural judge achieves strong agreement with the LLM judge baseline.</p>
+          <p>Large Language Models produce fluent text that is frequently wrong, and the usual remedy &mdash; asking a second model to grade the first &mdash; inherits well-documented pathologies of its own. This project asks a narrower, tractable question: <b>can the quality of a locally hosted question-answering system be validated when no human-annotated ground truth exists at all?</b></p>
+          <p>The system answers each question twice using two independently prompted local models (LLaMA&nbsp;3 and Mistral), then validates the pair rather than trusting either. An independent Verifier (phi3) and Judge (qwen3.5:9b) score both candidates <b>blind</b> on an eight-factor, 80-point rubric. Semantic similarity, cross-model agreement and external Wikipedia/Wikidata checks are blended into one 0&ndash;1 confidence score; anything below a calibrated threshold is regenerated automatically, and a sixth agent (Gemma&nbsp;2&nbsp;9B) synthesises the final answer. Everything runs offline, with no paid APIs.</p>
+          <p>Validation is <b>label-free by construction</b>. A self-generated 5,000-question corpus was produced and the decision threshold calibrated against censored data using a deliberately injected control group, ROC analysis with Youden's J, and a 2,000-sample bootstrap &mdash; giving an adopted operating point of <b>&tau;&nbsp;=&nbsp;0.72</b>, 95% CI [0.69, 0.75].</p>
         </div>
       </div>
 
@@ -271,13 +271,13 @@
       <div class="section">
         <div class="section-title h-pink">Introduction</div>
         <div class="section-body">
-          <p>The rapid adoption of LLMs like GPT-4, LLaMA, and Mistral for knowledge retrieval has created an urgent need for automated, interpretable evaluation systems. Current approaches fall into two camps:</p>
+          <p>An LLM does not signal uncertainty the way a traditional component signals an error: a wrong answer is indistinguishable in tone from a right one. The dominant response is the <b>LLM-as-a-judge</b> pattern, which scales well but is a measurement instrument built from the same material as the thing it measures.</p>
           <ul>
-            <li><b>Human evaluation</b> – accurate but expensive, slow, and non-scalable</li>
-            <li><b>LLM-as-Judge</b> – faster but non-deterministic, costly via APIs, and prone to position bias</li>
+            <li><b>Human evaluation</b> &mdash; accurate, but expensive, slow and unscalable.</li>
+            <li><b>LLM-as-a-judge</b> &mdash; fast, but exhibits <i>position</i>, <i>verbosity</i> and <i>self-preference</i> bias large enough to reverse a verdict.</li>
           </ul>
-          <p>This project bridges both worlds with a <b>multi-agent validation pipeline</b> that (1) uses an LLM judge to auto-generate labeled training data, (2) trains a purpose-specific BERT regressor on that data, and (3) deploys the regressor as a deterministic, fast, and fully local replacement judge.</p>
-          <p>Built on top of a specialization-year prototype (Sem 5–6) that established the 6-agent pipeline and proved that competitive multi-agent generation improves output quality, this final year project focuses on <b>eliminating the LLM judge bottleneck</b> and training a first-of-its-kind <b>self-supervised evaluation model</b> for open-domain Q&amp;A.</p>
+          <p>A second constraint shapes this work: much of the evaluation literature assumes human preference labels or a frontier commercial judge. Both fail for a department laboratory and for any deployment whose data cannot leave the institution. This project therefore restricts itself to <b>models running locally on a single workstation</b>, and builds validation that works without labels.</p>
+          <p>Crucially, the validation apparatus is then <b>turned on itself</b> and measured for the very biases the literature warns about. A system that cannot be audited this way is of limited scientific value.</p>
         </div>
       </div>
 
@@ -285,13 +285,13 @@
       <div class="section">
         <div class="section-title h-teal">Literature Survey</div>
         <div class="section-body">
-          <p><b>[1] MT-Bench &amp; LLM-as-Judge</b> – Zheng et al. (NeurIPS 2023) introduced using GPT-4 to evaluate LLM outputs on multi-turn tasks. While effective, it requires expensive API calls and exhibits position bias. Our work trains a local, bias-free alternative.</p>
-          <p><b>[2] Prometheus</b> – Kim et al. (2024) fine-tuned LLaMA on human-written evaluation rubrics to produce an open-source judge LLM. Unlike Prometheus, we use a lightweight BERT regressor rather than a 7B-parameter model, making inference ~100× faster.</p>
-          <p><b>[3] PandaLM</b> – Wang et al. (2024) trained a 7B-parameter judge on synthetic preference data. Our approach generates domain-diverse data across 10 subject areas and uses it to train a much smaller, faster model.</p>
-          <p><b>[4] RewardBench</b> – Lambert et al. (2024) benchmarked reward models for RLHF. Our scoring rubric (5 criteria × 10 points) aligns with reward modelling concepts, and our human feedback loop is inspired by RLHF principles.</p>
-          <p><b>[5] BERT</b> – Devlin et al. (NAACL 2019). We use BERT-base-uncased as the backbone encoder for our neural judge, leveraging its contextualized token embeddings for regression over 5 scoring dimensions.</p>
-          <p><b>[6] Constitutional AI</b> – Bai et al., Anthropic (2022). Their self-critique and revision loop inspired our multi-agent verification stage where one LLM fact-checks another's output.</p>
-          <p><b>[7] Self-RAG</b> – Asai et al. (2024). Self-reflective generation aligns with our multi-agent design where agents critique and revise before producing the final synthesized answer.</p>
+          <p><b>[1] MT-Bench &amp; LLM-as-a-Judge</b> &ndash; Zheng et al. (NeurIPS 2023) established that model judges correlate with human preference in aggregate, and documented position and self-enhancement bias. Our work reproduces those biases locally and <i>quantifies</i> them on our own pipeline.</p>
+          <p><b>[2] G-Eval</b> &ndash; Liu et al. (EMNLP 2023) used chain-of-thought form-filling for more stable numeric scores. Our eight-factor rubric with per-criterion justifications follows the same principle of structured scoring over free-form judgement.</p>
+          <p><b>[3] Prometheus</b> &ndash; Kim et al. (ICLR 2024) showed an open, smaller model can approach proprietary grading behaviour, which is what makes a fully local judge credible.</p>
+          <p><b>[4] BERTScore</b> &ndash; Zhang et al. (ICLR 2020). Embedding-based, but <i>reference-based</i>: unusable as a quality metric here. We use it only for cross-model agreement, never against a reference answer.</p>
+          <p><b>[5] AutoGen</b> &ndash; Wu et al. (2023) popularised multi-agent role decomposition. We adopt the decomposition but reject reusing one model across roles, which silently destroys evaluator independence.</p>
+          <p><b>[6] Youden's J</b> &ndash; Youden (1950), and <b>[7] the Bootstrap</b> &ndash; Efron &amp; Tibshirani (1993): the statistical basis for choosing and bounding our decision threshold.</p>
+          <p><b>Gap addressed:</b> a complete, reproducible account of building such a system under a hard no-ground-truth, no-external-API constraint, and then measuring its own bias with position, identity and length properly controlled.</p>
         </div>
       </div>
 
@@ -300,13 +300,13 @@
         <div class="section-title h-purple">Objectives</div>
         <div class="section-body">
           <ul>
-            <li>Design and deploy a <b>6-agent agentic pipeline</b> using LLaMA 3 and Mistral running fully offline via Ollama, with real-time SSE streaming to a web frontend.</li>
-            <li>Automatically generate a <b>1,000-sample self-labeled training dataset</b> across 10 knowledge domains with 5-criterion rubric scores per sample.</li>
-            <li>Engineer rich features per answer: <b>semantic similarity</b>, length score, ROUGE-L, and readability indices.</li>
-            <li>Fine-tune a <b>BERT-based multi-output regression model</b> to predict all 5 judge scores simultaneously, achieving &gt;85% agreement with the LLM judge baseline.</li>
-            <li>Implement a <b>human feedback loop</b> (thumbs up/down) to collect override labels and continuously improve the custom judge via incremental retraining.</li>
-            <li>Reduce evaluation latency from <b>~5–6 minutes (LLM judge) to &lt;1 second (custom judge)</b> per query.</li>
-            <li>Deploy the entire system — generation, evaluation, and custom judge inference — locally with <b>zero external API dependency</b>.</li>
+            <li>Build a <b>six-agent pipeline</b> in which generation and evaluation are performed by <b>different</b> models, running fully offline via Ollama with real-time SSE streaming.</li>
+            <li>Define a <b>multi-signal confidence score</b> blending model-internal and external evidence so no single signal dominates.</li>
+            <li>Gate an <b>automatic regeneration loop</b> on that score, with a bounded attempt count.</li>
+            <li><b>Calibrate the threshold from data</b> rather than intuition &mdash; accounting for the fact that the gate censors exactly the observations needed to calibrate it.</li>
+            <li>Generate a corpus large enough for that calibration to be statistically meaningful, <b>without human annotation</b>.</li>
+            <li><b>Measure the validation apparatus itself</b> for position and self-preference bias, and correct what is found.</li>
+            <li>Document measurement errors made along the way, including those caught before they reached a conclusion.</li>
           </ul>
         </div>
       </div>
@@ -320,47 +320,28 @@
       <div class="section">
         <div class="section-title h-cyan">Methodology</div>
         <div class="section-body">
-          <p><b>Phase 1 – Multi-Agent Pipeline (completed in Sem 5–6)</b></p>
+          <p><b>Phase 1 &ndash; Multi-Agent Pipeline</b></p>
           <ul>
-            <li>FastAPI backend with Server-Sent Events (SSE) for real-time streaming</li>
-            <li>LLaMA 3 &amp; Mistral run in parallel via <code>asyncio.gather()</code> using <i>langchain-ollama</i></li>
-            <li>Verifier agent (LLaMA 3, temp=0.1) fact-checks both answers for hallucinations</li>
-            <li>NLP Scorer computes cosine similarity using <i>all-MiniLM-L6-v2</i> sentence embeddings and a composite score: <b>0.7×SemanticSim + 0.3×LengthScore</b></li>
-            <li>Judge agent (Mistral, temp=0.1) scores on 5 criteria (0–10 each, max 50) with one-sentence justifications per score</li>
-            <li>Combiner agent (Gemma 2 9B, temp=0.4) synthesizes a ≤150-word final answer — deliberately not one of the generators</li>
-            <li>SQLite rolling context store (last 5 queries) injected into all LLM prompts for conversational continuity</li>
+            <li>FastAPI backend streaming every stage transition over Server-Sent Events.</li>
+            <li>LLaMA&nbsp;3 and Mistral generate independently via <code>asyncio.gather()</code> (langchain-ollama).</li>
+            <li>Verifier (<b>phi3</b>, temp=0.1) and Judge (<b>qwen3.5:9b</b>, temp=0.1, reasoning disabled) each score <i>both</i> answers on the same <b>8-factor / 80-point</b> rubric.</li>
+            <li>Combiner (<b>Gemma&nbsp;2&nbsp;9B</b>, temp=0.4) synthesises a &le;150-word answer &mdash; deliberately <b>not</b> one of the generators.</li>
           </ul>
-
-          <p><b>Phase 2 – Self-Labeled Training Data Generation (ongoing)</b></p>
+          <p><b>Phase 2 &ndash; Bias Controls</b></p>
           <ul>
-            <li>Standalone batch script runs the full pipeline on <b>1,000 diverse questions</b> (10 domains × 100 each) and saves per-sample scores to <i>judge_training.db</i></li>
-            <li>Scores parsed via regex from structured judge output; skips already-processed questions for crash-safet resumability</li>
-            <li>Each record stores: question, answer_a/b, sem_sim, composite_score, factual/completeness/clarity/relevance/depth (×2), total (×2), winner, elapsed_time</li>
+            <li><b>Brand-blind prompts:</b> evaluators never learn which system wrote which answer.</li>
+            <li><b>Position randomisation:</b> a fresh coin-flip per question assigns answers to slots; the true mapping is stored separately so per-model statistics stay recoverable.</li>
+            <li>Rubric totals are <b>recomputed</b> from criterion scores &mdash; evaluators were observed stating totals that contradicted their own scores.</li>
           </ul>
-
-          <p><b>Phase 3 – Feature Engineering</b></p>
+          <p><b>Phase 3 &ndash; Label-Free Calibration</b></p>
           <ul>
-            <li>Semantic similarity of answer vs. question (cosine, MiniLM embeddings)</li>
-            <li>ROUGE-L overlap between answers and question tokens</li>
-            <li>Coleman-Liau readability index per answer</li>
-            <li>Word count, sentence count, average sentence length</li>
-            <li>Named entity overlap (spaCy NER)</li>
+            <li>Answers above the gate are never regenerated, so the data are <b>censored</b>. A random fraction of <i>passing</i> answers is regenerated anyway, purely to measure &mdash; a <b>control group</b>.</li>
+            <li>Three independent routes: two-proportion z-test, ROC with Youden's J, and a 2,000-sample bootstrap.</li>
           </ul>
-
-          <p><b>Phase 4 – BERT Judge Model Training</b></p>
+          <p><b>Phase 4 &ndash; Auditing the Auditor</b></p>
           <ul>
-            <li>Input: [CLS] + question + [SEP] + answer + [SEP] tokenized by BERT tokenizer (max 512 tokens)</li>
-            <li>Architecture: BERT-base-uncased → pooled [CLS] → dropout(0.3) → Linear(768 → 5) → sigmoid × 10 for each criterion</li>
-            <li>Multi-task regression: predict all 5 scores simultaneously (MSELoss)</li>
-            <li>Optimizer: AdamW, lr=2e-5, warmup steps=100, 5 epochs, batch size=16</li>
-            <li>Train/val/test split: 80/10/10 stratified by winner label</li>
-          </ul>
-
-          <p><b>Phase 5 – Human Feedback Integration</b></p>
-          <ul>
-            <li>Frontend thumbs up/down UI stores human overrides in a separate SQLite table</li>
-            <li>Human-labeled rows given 3× weight in incremental retraining (weekly scheduled job)</li>
-            <li>Disagreement rate (model vs. human) tracked as quality metric</li>
+            <li>Embed both candidates and the final answer; measure which the final sits closer to.</li>
+            <li>Cross <b>position &times; identity &times; judge verdict</b> to separate effects that are otherwise conflated; control for answer length.</li>
           </ul>
         </div>
       </div>
@@ -373,7 +354,7 @@
           <div class="flow-box blue">User Query</div>
           <div class="flow-arrow">▼</div>
 
-          <div class="flow-box yellow">Context Injection (SQLite – last 5 queries)</div>
+          <div class="flow-box yellow">Context Injection (last 5 queries) &middot; optional RAG retrieval</div>
           <div class="flow-arrow">▼</div>
 
           <div class="flow-label">── STAGE 1 &amp; 2 — PARALLEL GENERATION ──</div>
@@ -381,37 +362,37 @@
             <div class="flow-box blue">🔵 LLaMA 3<br>Answer Generator<br><span style="font-size:8px;font-weight:400">temp=0.7 | 600 tokens</span></div>
             <div class="flow-box purple">🟣 Mistral<br>Answer Generator<br><span style="font-size:8px;font-weight:400">temp=0.7 | 600 tokens</span></div>
           </div>
+          <div class="flow-label" style="font-style:italic">answer order is a fresh coin-flip &mdash; evaluators never see which model wrote which</div>
           <div class="flow-arrow">▼</div>
 
           <div class="flow-label">── STAGE 3 &amp; 4 — PARALLEL VALIDATION ──</div>
           <div class="flow-para">
-            <div class="flow-box teal">🔍 Verifier Agent<br>(LLaMA 3)<br><span style="font-size:8px;font-weight:400">temp=0.1 | Fact-check</span></div>
-            <div class="flow-box yellow">📊 NLP Scorer<br>(No LLM)<br><span style="font-size:8px;font-weight:400">MiniLM Embeddings</span></div>
+            <div class="flow-box teal">🔍 Verifier (phi3)<br>8-factor rubric /80<br><span style="font-size:8px;font-weight:400">temp=0.1 | blind</span></div>
+            <div class="flow-box yellow">📊 Similarity Scorer<br>(No LLM)<br><span style="font-size:8px;font-weight:400">MiniLM embeddings</span></div>
           </div>
           <div class="flow-arrow">▼</div>
 
           <div class="flow-label">── STAGE 5 — SEQUENTIAL ──</div>
-          <div class="flow-box red">⚖️ Judge Agent (Mistral)<br>5-Criterion Rubric Scoring (0–50)<br><span style="font-size:8px;font-weight:400">Factual · Completeness · Clarity · Relevance · Depth</span></div>
-          <div class="flow-arrow">▼</div>
-
-          <div class="flow-label">── STAGE 6 — SEQUENTIAL ──</div>
-          <div class="flow-box green">✦ Combiner Agent (Gemma 2 9B)<br>Synthesizes Final Answer ≤150 words</div>
-          <div class="flow-arrow">▼</div>
-
-          <div class="flow-box blue">SQLite — Save to judge_training.db</div>
-          <div class="flow-arrow">▼</div>
-
-          <div class="flow-label">── TRAINING PIPELINE ──</div>
-          <div class="flow-box yellow">Feature Engineering<br><span style="font-size:8px;font-weight:400">Sem Sim · ROUGE · Readability · NER overlap</span></div>
-          <div class="flow-arrow">▼</div>
-
-          <div class="flow-box purple">BERT Fine-Tuning<br><span style="font-size:8px;font-weight:400">Multi-output Regression → 5 criterion scores</span></div>
+          <div class="flow-box red">⚖️ Judge (qwen3.5:9b)<br>8-factor rubric /80 + winner<br><span style="font-size:8px;font-weight:400">blind · reasoning off · temp=0.1</span></div>
           <div class="flow-arrow">▼</div>
 
           <div class="flow-para">
-            <div class="flow-box green">✅ Custom Neural Judge<br><span style="font-size:8px;font-weight:400">&lt;1 second inference</span></div>
-            <div class="flow-box teal">👍/👎 Human Feedback<br><span style="font-size:8px;font-weight:400">Override → Retrain</span></div>
+            <div class="flow-box teal">🌐 Wikipedia<br><span style="font-size:8px;font-weight:400">relevance-gated</span></div>
+            <div class="flow-box teal">🗂️ Wikidata<br><span style="font-size:8px;font-weight:400">entity match</span></div>
           </div>
+          <div class="flow-arrow">▼</div>
+
+          <div class="flow-box purple">Weighted Confidence Score (6 signals → 0–1)<br><span style="font-size:8px;font-weight:400">judge .40 · similarity .15 · wikipedia .15 · agreement .10 · verifier–judge .10 · wikidata .10</span></div>
+          <div class="flow-arrow">▼</div>
+
+          <div class="flow-box red">◆ GATE — is score ≥ 0.72 ?<br><span style="font-size:8px;font-weight:400">below → regenerate (max 3 attempts, best attempt kept)</span></div>
+          <div class="flow-arrow">▼</div>
+
+          <div class="flow-label">── STAGE 6 — SEQUENTIAL ──</div>
+          <div class="flow-box green">✦ Combiner (Gemma 2 9B)<br>Final answer ≤150 words<br><span style="font-size:8px;font-weight:400">not a generator — no answer of its own to prefer</span></div>
+          <div class="flow-arrow">▼</div>
+
+          <div class="flow-box blue">SQLite — every raw signal of every attempt logged</div>
 
         </div>
       </div>
@@ -420,21 +401,13 @@
       <div class="section">
         <div class="section-title h-pink">Experimental Details</div>
         <div class="section-body">
-          <p><b>Dataset:</b> 1,000 questions across 10 domains: Science &amp; Technology, History &amp; Geography, Health &amp; Medicine, Economics &amp; Finance, Philosophy &amp; Ethics, Environment &amp; Climate, Psychology &amp; Behaviour, Society &amp; Culture, Mathematics &amp; Logic, Space &amp; Astronomy (100 questions per domain).</p>
-          <p><b>Generator Models:</b> LLaMA 3 7B (Meta, llama3:latest via Ollama) and Mistral 7B (Mistral AI, mistral:latest via Ollama). Both quantized to 4-bit for local inference.</p>
-          <p><b>Embedding Model:</b> all-MiniLM-L6-v2 (22.7M params, 384-dim, HuggingFace sentence-transformers).</p>
-          <p><b>Neural Judge Architecture:</b></p>
-          <ul>
-            <li>Backbone: bert-base-uncased (110M parameters)</li>
-            <li>Input: [CLS] question [SEP] answer [SEP] (max 512 tokens)</li>
-            <li>Head: Dropout(0.3) → Linear(768→5) → Sigmoid × 10</li>
-            <li>Loss: MSELoss (multi-output regression)</li>
-            <li>Optimizer: AdamW, lr=2e-5, weight_decay=0.01</li>
-            <li>Epochs: 10, Batch size: 16, Warmup: 10%</li>
-          </ul>
-          <p><b>Hardware:</b> MacBook Pro M-series chip (Apple Silicon), 16GB RAM, Python 3.11, PyTorch 2.x with MPS acceleration for training.</p>
-          <p><b>Evaluation Metrics:</b> MSE per criterion, Pearson correlation (predicted vs. LLM-judged scores), Agreement Rate (± 1 point tolerance), Cohen's Kappa for winner classification.</p>
-          <p><b>Software Stack:</b> Python 3.11 · FastAPI · Ollama · LangChain · HuggingFace Transformers · sentence-transformers · scikit-learn · SQLite · PyTorch · rich.</p>
+          <p><b>Dataset:</b> <b>5,000 questions</b> across 10 domains &mdash; Science &amp; Technology, History &amp; Geography, Health &amp; Medicine, Economics &amp; Finance, Philosophy &amp; Ethics, Environment &amp; Climate, Psychology &amp; Behaviour, Society &amp; Culture, Mathematics &amp; Logic, Space &amp; Astronomy. <b>8,432</b> attempt records; 5,000 final answers; mean 1.69 attempts per question.</p>
+          <p><b>Models (all local via Ollama):</b> generators <code>llama3</code> and <code>mistral</code> (temp 0.7, 600 tok); Verifier <code>phi3:latest</code> (0.1, 700); Judge <code>qwen3.5:9b</code> (0.1, 900, reasoning off); Combiner <code>gemma2:9b</code> (0.4, 1000).</p>
+          <p><b>Embedding Model:</b> all-MiniLM-L6-v2 (22.7M params, 384-dim, sentence-transformers), GPU-resident.</p>
+          <p><b>Rubric (8 criteria &times; 10 = 80):</b> Factual Correctness, Question Relevance, Context Relevance, Faithfulness, Completeness, Hallucination-Free, Clarity, Consistency &mdash; applied identically by Verifier and Judge, which is what makes their agreement meaningful.</p>
+          <p><b>Hardware:</b> single workstation, NVIDIA RTX 4090 (24&nbsp;GB VRAM), Windows, Python 3.13. The six models exceed VRAM if co-resident, so the pipeline runs at concurrency 1 and the runtime evicts weights between stages.</p>
+          <p><b>Statistical Methods:</b> two-proportion z-test; ROC with Youden's J; 2,000-sample bootstrap; Wilson intervals; inverse-probability weighting for a control rate that changed mid-run.</p>
+          <p><b>Software Stack:</b> Python · FastAPI · Ollama · LangChain · sentence-transformers · scikit-learn · SciPy · SQLite · NumPy.</p>
         </div>
       </div>
 
@@ -448,29 +421,28 @@
         <div class="section-title h-mauve">Results</div>
         <div class="section-body">
 
-          <p><b>✅ Verified Pipeline Results (from live DB — 150 samples):</b></p>
+          <p><b>✅ Threshold calibrated from data (n = 5,000):</b></p>
           <ul>
-            <li>Training samples collected so far: <b>150 / 1,000</b></li>
-            <li>Avg. LLaMA 3 total judge score: <b>38.1 / 50</b></li>
-            <li>Avg. Mistral total judge score: <b>38.08 / 50</b></li>
-            <li>Avg. composite semantic score: <b>8.27 / 10</b> (LLaMA 3), <b>8.03 / 10</b> (Mistral)</li>
-            <li>Winner distribution: LLaMA 3 — <b>41%</b> | Mistral — <b>21%</b> | Tie — <b>38%</b></li>
-            <li>Avg. time per sample: <b>~10 min</b> (vs. ~18 min without parallelism)</li>
-            <li>Speedup from parallel execution: <b>~40% reduction</b> in pipeline time</li>
-            <li>Both models score close to each other, validating that <b>competition is meaningful</b> — neither model dominates consistently</li>
+            <li>Three independent routes agree: z-test <b>p = 0.011</b>; ROC point optimum <b>t = 0.70</b> (AUC <b>0.629</b>); bootstrap median <b>0.72</b>, 95% CI <b>[0.69, 0.75]</b>.</li>
+            <li>Youden's J is near-flat across 0.70&ndash;0.74, so that band is statistically indistinguishable &mdash; the choice within it is policy, not statistics.</li>
+            <li><b>&tau; = 0.72 adopted</b> (bootstrap median): sensitivity <b>66.7%</b>, specificity <b>50.3%</b>. The earlier 0.75 sat at the very edge of the CI, trading specificity (30.2%) for recall.</li>
           </ul>
 
-          <p style="margin-top:6px;padding:4px 6px;background:#fff8e1;border-left:3px solid #f9a825;font-size:10.5px;">
-            <b>🎯 Planned Targets (to be achieved during Sem 7–8):</b>
-          </p>
+          <p style="margin-top:6px"><b>🔍 The validation apparatus audited itself:</b></p>
           <ul>
-            <li><i>Complete 1,000-sample dataset</i> — est. completion in ~6 weeks of background generation</li>
-            <li><i>BERT neural judge</i> — target MSE ≤ 2.0 per criterion; Pearson r ≥ 0.75 with LLM judge</li>
-            <li><i>Winner classification accuracy</i> — target ≥ 80% agreement with LLM judge baseline</li>
-            <li><i>Inference speedup</i> — target &lt;100ms per query (vs. ~5–6 min for LLM judge → &gt;3,000× faster)</li>
-            <li><i>Human feedback loop</i> — collect 100+ manual overrides; retrain monthly</li>
-            <li><i>Hallucination detection accuracy</i> — measure verifier flagging rate on known-error test set</li>
+            <li>The original Combiner was <code>llama3</code> &mdash; also a generator, so it was merging <i>its own writing</i> against Mistral's.</li>
+            <li><b>Identity effect: +18.1 pp</b> preference for its own answer, position held fixed (p &asymp; 1.7&times;10<sup>&minus;89</sup>).</li>
+            <li><b>Position effect: +10.8 pp</b> toward whichever answer sat in prompt slot 1 (p &asymp; 5.7&times;10<sup>&minus;53</sup>).</li>
+            <li><b>Length ruled out:</b> r = +0.029; the effect persists at <b>61.1%</b> among length-matched pairs.</li>
+            <li>Mechanism is <i>selective obedience</i>: the Combiner followed the Judge <b>69.4%</b> of the time when the Judge picked its own answer, but only <b>49.3%</b> otherwise.</li>
+            <li>Fixed by construction &mdash; Gemma 2 9B has no answer of its own among the two it merges.</li>
           </ul>
+
+          <p style="margin-top:6px"><b>🧪 Evaluator discrimination verified:</b> the Verifier scores intact answers <b>77&ndash;80/80</b> and deliberately corrupted answers <b>0&ndash;8/80</b> &mdash; a <b>74.5-point</b> separation, confirming the evaluators discriminate rather than rubber-stamp.</p>
+
+          <p style="margin-top:6px;padding:4px 6px;background:#fff8e1;border-left:3px solid #f9a825;font-size:10.5px;">
+            <b>⚠️ Four measurement errors were caught before they reached a conclusion</b> &mdash; a model reporting a total contradicting its own scores; a &ldquo;second opinion&rdquo; signal secretly derived from the Judge; a sampling weight applied after the rate had changed mid-run; and restart-orphaned duplicate final rows. Each was found by checking a result that looked <i>too clean</i>.
+          </p>
 
         </div>
       </div>
@@ -479,15 +451,15 @@
       <div class="section">
         <div class="section-title h-pink">Conclusion</div>
         <div class="section-body">
-          <p>This project demonstrates that a <b>multi-agent LLM pipeline</b> can simultaneously improve answer quality and generate its own self-labeled training data — enabling a virtuous cycle where the system becomes progressively more efficient and autonomous.</p>
-          <p>The key contributions are:</p>
+          <p>A locally hosted question-answering system <b>can</b> be validated without ground truth &mdash; with honest limits. Internal consistency, evaluator discrimination, relative improvement and threshold calibration are all achievable label-free. <b>Absolute factual accuracy is not</b>, and no such claim is made.</p>
+          <p>Key contributions:</p>
           <ul>
-            <li><b>A 6-agent orchestration system</b> with parallel execution, real-time SSE streaming, and context-aware memory — proven to produce better answers than any single LLM</li>
-            <li><b>A self-labeling pipeline</b> that generates 1,000 richly annotated samples across 10 domains without any human annotation effort</li>
-            <li><b>A custom BERT neural judge</b> that replaces the LLM judge at &gt;7,000× speedup, making evaluation fast enough for real-time use</li>
-            <li><b>A human feedback loop</b> that continuously improves the custom judge, grounding it in real-world preferences beyond what the LLM judge captures</li>
+            <li><b>A label-free validation methodology</b> using a deliberately injected control group to defeat the censoring that the regeneration gate itself creates.</li>
+            <li><b>A threshold derived three independent ways</b> that converge on one narrow band &mdash; &tau; = 0.72, CI [0.69, 0.75] &mdash; rather than chosen by intuition.</li>
+            <li><b>A measured decomposition of evaluator bias</b> into identity (+18.1 pp) and position (+10.8 pp) components with length controlled &mdash; which <i>overturned this project's own prior design decision</i>.</li>
+            <li><b>A fully offline six-agent system</b> in which no model both writes an answer and evaluates or merges it.</li>
           </ul>
-          <p>The system runs <b>entirely offline</b> with no paid APIs, offering a practical blueprint for privacy-preserving, cost-free LLM evaluation in enterprise and research settings. Future work includes expanding to more generator models (Gemma 2, Phi-3), domain-specific fine-tuning of the judge, and exploring contrastive learning for preference-based ranking beyond regression.</p>
+          <p>The system is best understood not as a correctness oracle but as a <b>calibrated quality gate</b>: it reliably separates weaker answers from stronger ones and acts on that separation, while remaining honest about what it cannot certify. <b>Open problem:</b> the +10.8 pp position effect is mitigated but not eliminated; extractive selection (MMR) would remove it by construction.</p>
         </div>
       </div>
 
@@ -496,17 +468,17 @@
         <div class="section-title h-green">References</div>
         <div class="section-body">
           <p>[1] L. Zheng et al., "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena," <i>NeurIPS</i>, 2023.</p>
-          <p>[2] S. Kim et al., "Prometheus: Inducing Fine-grained Evaluation Capability in Language Models," <i>ICLR</i>, 2024.</p>
-          <p>[3] Y. Wang et al., "PandaLM: An Automatic Evaluation Benchmark for LLM Instruction Tuning Optimization," <i>arXiv:2306.05087</i>, 2024.</p>
-          <p>[4] N. Lambert et al., "RewardBench: Evaluating Reward Models for Language Modeling," <i>arXiv:2403.13787</i>, 2024.</p>
-          <p>[5] J. Devlin et al., "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding," <i>NAACL</i>, 2019.</p>
-          <p>[6] H. Touvron et al., "LLaMA: Open and Efficient Foundation Language Models," <i>arXiv:2302.13971</i>, 2023.</p>
-          <p>[7] A. Q. Jiang et al., "Mistral 7B," <i>arXiv:2310.06825</i>, 2023.</p>
-          <p>[8] Y. Bai et al., "Constitutional AI: Harmlessness from AI Feedback," <i>Anthropic</i>, 2022.</p>
-          <p>[9] A. Asai et al., "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection," <i>ICLR</i>, 2024.</p>
-          <p>[10] N. Reimers &amp; I. Gurevych, "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks," <i>EMNLP</i>, 2019.</p>
-          <p>[11] L. Ouyang et al., "Training Language Models to Follow Instructions with Human Feedback," <i>NeurIPS</i>, 2022.</p>
-          <p>[12] I. Loshchilov &amp; F. Hutter, "Decoupled Weight Decay Regularization (AdamW)," <i>ICLR</i>, 2019.</p>
+          <p>[2] Y. Liu et al., "G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment," <i>EMNLP</i>, 2023.</p>
+          <p>[3] S. Kim et al., "Prometheus: Inducing Fine-grained Evaluation Capability in Language Models," <i>ICLR</i>, 2024.</p>
+          <p>[4] T. Zhang et al., "BERTScore: Evaluating Text Generation with BERT," <i>ICLR</i>, 2020.</p>
+          <p>[5] Q. Wu et al., "AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation," <i>arXiv:2308.08155</i>, 2023.</p>
+          <p>[6] P. Lewis et al., "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks," <i>NeurIPS</i>, 2020.</p>
+          <p>[7] N. Reimers &amp; I. Gurevych, "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks," <i>EMNLP</i>, 2019.</p>
+          <p>[8] W. J. Youden, "Index for rating diagnostic tests," <i>Cancer</i>, vol. 3, no. 1, pp. 32&ndash;35, 1950.</p>
+          <p>[9] B. Efron &amp; R. J. Tibshirani, <i>An Introduction to the Bootstrap</i>. Chapman &amp; Hall, 1993.</p>
+          <p>[10] J. Carbonell &amp; J. Goldstein, "The use of MMR, diversity-based reranking...," <i>ACM SIGIR</i>, 1998.</p>
+          <p>[11] A. Q. Jiang et al., "Mistral 7B," <i>arXiv:2310.06825</i>, 2023.</p>
+          <p>[12] Gemma Team, "Gemma 2: Improving Open Language Models at a Practical Size," <i>arXiv:2408.00118</i>, 2024.</p>
         </div>
       </div>
 
