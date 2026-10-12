@@ -21,11 +21,53 @@ def create_combiner_agent() -> BaseAgent:
     refined, high-quality response.
 
     Role: Answer Synthesiser & Editor
-    Model: llama3 (strong at summarisation and coherent writing)
+    Model: gemma2:9b - deliberately NOT one of the two generators.
+
+    Why not llama3 (the original choice)
+    ------------------------------------
+    llama3 is also one of the two answer GENERATORS, so when it combined it was
+    always merging its own writing against Mistral's. utils/scoring.py already
+    recorded the symptom - final_answer-referenced BERTScore/BLEU/ROUGE were
+    "systematically biased toward answer_a because the same model (LLaMA 3) both
+    writes answer_a and drafts final_answer as combiner" - but that was only
+    worked around by dropping those metrics from the confidence score. The bias
+    stayed in the shipped answer.
+
+    training/combiner_bias_analysis.py measured it on all 5000 final rows, with
+    position crossed against identity and the judge verdict:
+
+        IDENTITY effect  +18.1 pp toward llama3 (position held fixed, p~1.7e-89)
+        POSITION effect  +10.8 pp toward whichever answer sits in slot 1
+        length confound  ruled out (r=+0.029; effect persists in length-matched
+                         pairs at 61.1%, n=1645, p=2e-19)
+
+    The identity effect ran through selective obedience rather than style
+    recognition: the combiner followed the judge 69.4% of the time when the judge
+    picked llama3 but only 49.3% when it picked mistral - a 20 pp obedience gap.
+    In the 1815 rows where llama3 sat in slot 1 and the judge had picked Mistral,
+    the final answer STILL landed closer to llama3 64.0% of the time.
+
+    gemma2:9b is neither generator, nor the verifier (phi3), nor the judge
+    (qwen3.5:9b), so it has no answer of its own among the two it merges - the
+    identity term is removed by construction rather than reduced. It is also a
+    different model family (Google), already local, and in the replay pilot it
+    actually respected the 150-word cap below (mean 128, max 151 words) where
+    llama3 systematically overshot it (mean 237, max 407).
+
+    NOTE: swapping the combiner model does NOT address the +10.8 pp POSITION
+    effect - that is a property of how a transformer reads a prompt, not of model
+    identity, and the upstream per-question coin flip only makes it unbiased with
+    respect to model identity, not absent. See RESEARCH_LOG.md Section 37.
+
+    This change is safe with respect to every published result: the combiner is
+    strictly terminal. compute_weighted_score never takes final_answer as a
+    signal, and the combiner runs once AFTER the regeneration loop closes, so the
+    5000-question dataset, the 0.72 threshold calibration and the judge-selection
+    results are all unaffected.
     """
     return BaseAgent(
         role="Answer Synthesiser & Editor",
-        model_name="llama3",
+        model_name="gemma2:9b",
         temperature=0.4,      # Moderate temperature for fluent, creative synthesis
         num_predict=1000,
         system_prompt=(

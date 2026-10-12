@@ -261,7 +261,7 @@
       <div class="section">
         <div class="section-title h-blue">Abstract</div>
         <div class="section-body">
-          <p>Large Language Models (LLMs) are prone to hallucinations and inconsistency, making automated quality evaluation critical yet difficult. This final year project proposes a <b>Hybrid Agentic LLM Evaluation Framework</b> that orchestrates six specialized AI agents — two competing generator LLMs (LLaMA 3 and Mistral), a fact-verifier, a semantic scorer, an LLM judge, and a combiner — to produce high-quality, verified answers entirely offline.</p>
+          <p>Large Language Models (LLMs) are prone to hallucinations and inconsistency, making automated quality evaluation critical yet difficult. This final year project proposes a <b>Hybrid Agentic LLM Evaluation Framework</b> that orchestrates six specialized AI agents — two competing generator LLMs (LLaMA 3 and Mistral), an independent fact-verifier (phi3), a semantic scorer, an LLM judge (qwen3.5:9b), and a bias-free combiner (Gemma 2 9B) — to produce high-quality, verified answers entirely offline.</p>
           <p>The system self-generates a 1,000-sample labeled training dataset where each record captures both candidate answers, five-criterion judge scores (Factual Accuracy, Completeness, Clarity, Relevance, Depth), semantic similarity metrics, and the declared winner. This dataset is then used to fine-tune a <b>BERT-based neural regression model</b> that replicates the judge's behavior at millisecond speed — replacing the slow LLM judge (~5–6 min) without sacrificing interpretability.</p>
           <p>A human feedback loop further improves model accuracy over time. The entire system runs <b>100% locally with no paid APIs</b>, making it suitable for privacy-sensitive deployments. Results show the combined answer consistently outperforms either individual model, and the custom neural judge achieves strong agreement with the LLM judge baseline.</p>
         </div>
@@ -327,7 +327,7 @@
             <li>Verifier agent (LLaMA 3, temp=0.1) fact-checks both answers for hallucinations</li>
             <li>NLP Scorer computes cosine similarity using <i>all-MiniLM-L6-v2</i> sentence embeddings and a composite score: <b>0.7×SemanticSim + 0.3×LengthScore</b></li>
             <li>Judge agent (Mistral, temp=0.1) scores on 5 criteria (0–10 each, max 50) with one-sentence justifications per score</li>
-            <li>Combiner agent (LLaMA 3, temp=0.4) synthesizes a ≤150-word final answer</li>
+            <li>Combiner agent (Gemma 2 9B, temp=0.4) synthesizes a ≤150-word final answer — deliberately not one of the generators</li>
             <li>SQLite rolling context store (last 5 queries) injected into all LLM prompts for conversational continuity</li>
           </ul>
 
@@ -395,7 +395,7 @@
           <div class="flow-arrow">▼</div>
 
           <div class="flow-label">── STAGE 6 — SEQUENTIAL ──</div>
-          <div class="flow-box green">✦ Combiner Agent (LLaMA 3)<br>Synthesizes Final Answer ≤150 words</div>
+          <div class="flow-box green">✦ Combiner Agent (Gemma 2 9B)<br>Synthesizes Final Answer ≤150 words</div>
           <div class="flow-arrow">▼</div>
 
           <div class="flow-box blue">SQLite — Save to judge_training.db</div>

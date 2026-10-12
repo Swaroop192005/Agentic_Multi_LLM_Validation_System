@@ -1472,3 +1472,125 @@ and its justification through `docs/research-paper.{html,pdf}` and
 0.75 and can be synced on request.)
 
 *(Log continues below as further tests complete.)*
+
+---
+
+## 37. The Combiner was biased toward its own answers - measured, decomposed, and replaced with gemma2:9b
+
+The Combiner was `llama3`, and `llama3` is also one of the two answer generators.
+So on every question it was merging its own writing against Mistral's. Section 8
+had already recorded the *symptom* of this - `final_answer`-referenced
+BERTScore/BLEU/ROUGE were systematically biased toward `answer_a` - but the
+response at the time was to drop those metrics from the confidence score. That
+removed the bias from the **measurements** and left it in the **shipped answer**.
+This section finally measures the thing itself.
+
+### Tier 0: measuring it on the existing corpus (no regeneration)
+
+`training/combiner_bias_analysis.py`, all 5000 final rows. For each row, embed
+`answer_a`, `answer_b` and `final_answer` with the same all-MiniLM-L6-v2 encoder
+the pipeline already scores with, and ask which source answer the final answer
+sits closer to:
+
+    delta_position = cos(final, answer_a) - cos(final, answer_b)
+    lean_llama     = +delta_position if model_a == llama3 else -delta_position
+
+The headline number is **58.7% of finals closer to llama3 (p=3.5e-35)**, but that
+figure is not interpretable on its own, because the combiner turns out to have a
+*second* bias. Crossing position against identity separates them:
+
+| Effect | Size | Significance |
+|---|---|---|
+| **Identity** - llama3 advantage, position held fixed | **+18.1 pp** | p ~ 1.7e-89 |
+| **Position** - slot-1 advantage, averaged over identity | **+10.8 pp** | p ~ 5.7e-53 |
+| Length confound | r = +0.029 | ruled out |
+
+Length was a real candidate and is genuinely out: llama3 writes longer answers
+(366 vs 317 words), but the correlation between length advantage and lean is only
++0.029, and the lean *persists at 61.1%* among length-matched pairs (word counts
+within 10%, n=1645, p=2e-19). The combiner is not simply keeping more of the
+longer answer.
+
+### The mechanism is selective obedience, not style recognition
+
+The identity effect is entirely conditional on the judge agreeing with it:
+
+| Judge picked | llama3-lean in the final answer |
+|---|---|
+| llama3's answer | **69.4%** (p ~ 5e-74) |
+| mistral's answer | **50.7%** (p = 0.465, **not significant**) |
+
+The combiner followed the judge 69.4% of the time when the judge pointed at
+llama3, but only 49.3% when it pointed at Mistral - a **20 pp obedience gap**. It
+amplified the judge when the judge favoured its own answer and ignored the judge
+when it did not. The full 2x2x2 makes it stark; every cell is significant:
+
+| Slot 1 holds | Judge picked | n | leans to slot 1 |
+|---|---|---:|---:|
+| llama3 | llama3 | 620 | 87.7% |
+| llama3 | mistral | 1815 | **64.0%** |
+| mistral | llama3 | 1530 | 38.0% |
+| mistral | mistral | 1035 | 72.7% |
+
+Row 2 is the finding: the judge picked Mistral, Mistral's answer was sitting right
+there in slot 2, and the final answer *still* landed closer to llama3 64% of the
+time.
+
+### A real ordering bug in the live server, found while fixing this
+
+`server.py` kept `answer1` as llama3 always (only the Verifier/Judge *view* was
+randomized, with parsed scores remapped back via `remap_ab`). But `verification`
+and `judgement` are the **raw agent text**, written against the randomized view,
+and the judge's Overall Reasoning names "Answer 1"/"Answer 2" explicitly in that
+order. The combiner was therefore handed UI-order answers alongside
+judge-order feedback: whenever `swap` was true - **half of all live queries** - it
+was told "Answer 1 is more relevant" about the answer in the *other* slot.
+
+The batch generator never had this bug: it builds the combiner prompt from
+`answer_a`/`answer_b` and the raws produced against that same order. Live only.
+
+Fixed by passing the combiner the judge-view order, which also stops the +10.8 pp
+position pull from parking on llama3 on every single query.
+
+### The change: gemma2:9b as Combiner
+
+`gemma2:9b` is neither generator, nor the Verifier (phi3), nor the Judge
+(qwen3.5:9b), so it has no answer of its own among the two it merges - the
+identity term is removed **by construction** rather than reduced. It is a
+different model family, already local (no download), and in the replay pilot it
+respected the prompt's 150-word cap (mean 128, max 151 words) where llama3
+systematically overshot it (mean 237, max **407**). That cap had effectively not
+been in force.
+
+**This is safe with respect to every published result.** The combiner is strictly
+terminal: `compute_weighted_score` never takes `final_answer` as a signal, and the
+combiner runs once *after* the regeneration loop closes. The 5000-question
+dataset, the 0.72 threshold calibration and the judge-selection results are all
+untouched. End-to-end smoke test after the swap: all six stages ran, final answer
+136 words.
+
+**What this does NOT fix:** the +10.8 pp position effect. That is a property of how
+a transformer reads a prompt, not of model identity, so changing the combiner
+model cannot address it, and the per-question coin flip only makes it unbiased
+*with respect to model identity* rather than absent. Roughly 61% of final answers
+are still dominated by one slot rather than genuinely merged.
+
+### Open / next
+
+- **Tier 1 replay** (`training/combiner_replay.py`) is running: 400 questions x
+  {llama3, gemma2:9b} x {forward, swapped order}, every other input frozen, which
+  isolates identity lean (orders averaged, position cancels) from position lean
+  (orders compared). The harness remaps the A/B labels inside
+  `verifier_raw`/`judge_raw` when it swaps - without that it would feed the
+  combiner a verdict pointing at the wrong text and contaminate the effect being
+  measured. This is the same bug class as the server one above.
+- **Extractive MMR combiner** proposed as a third arm: bias-free by construction,
+  deterministic, faithful by construction, exact length control, and it makes the
+  source split directly countable instead of inferred. Known failure mode: MMR's
+  diversity term *rewards* selecting contradictions, since a contradiction is
+  maximally non-redundant - which conflicts with the combiner's job of removing
+  them. Hybrid (MMR selects content, a small LLM only smooths surface) is the
+  likely production design.
+- A useful by-product: for an MMR arm the true source split is known by
+  construction, so it calibrates the embedding-lean metric used throughout this
+  section.

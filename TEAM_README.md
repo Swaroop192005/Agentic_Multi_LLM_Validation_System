@@ -478,9 +478,15 @@ We explicitly **replaced CrewAI** with this lightweight custom BaseAgent. Reason
 |---|---|---|---|---|---|
 | LLaMA 3 Generator | `llm_agents.py` | llama3 | 0.7 | 600 | Primary answer |
 | Mistral Generator | `llm_agents.py` | mistral | 0.7 | 600 | Alternative answer |
-| Verifier | `verifier_agent.py` | llama3 | 0.1 | 450 | Fact-check both answers |
-| Judge | `judge_agent.py` | mistral | 0.1 | 700 | Score & pick winner |
-| Combiner | `combiner_agent.py` | llama3 | 0.4 | 1000 | Synthesize final answer |
+| Verifier | `verifier_agent.py` | phi3:latest | 0.1 | 700 | Score both answers on the 8-factor rubric |
+| Judge | `judge_agent.py` | qwen3.5:9b | 0.1 | 900 | Score both answers & pick winner |
+| Combiner | `combiner_agent.py` | gemma2:9b | 0.4 | 1000 | Synthesize final answer |
+
+No model both generates an answer and evaluates or merges it. The Judge runs with
+`reasoning=False` (qwen3.5 otherwise spends its whole token budget thinking and
+returns empty - RESEARCH_LOG.md Section 14). The Combiner was moved off `llama3`
+after it was measured preferring its own generated answer by +18.1 pp
+(RESEARCH_LOG.md Section 37).
 
 ---
 

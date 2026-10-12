@@ -33,3 +33,12 @@ ground_truth_study/__pycache__/
 # PDF build intermediates (keep the script + final PDFs, not the _print.html copies)
 pdf_build/*_print.html
 pdf_build/__pycache__/
+
+# Combiner-bias investigation intermediates. combiner_replay.db is matched by
+# the *.db LFS filter, and it is a regenerable experiment cache (rebuild with
+# training/combiner_replay.py), so keeping it out avoids spending account-wide
+# LFS quota on an artifact that is not a result.
+training/combiner_replay.db
+training/replay_run.log
+tunnel_app.log
+tunnel_*.log

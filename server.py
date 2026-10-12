@@ -403,6 +403,10 @@ async def _run_pipeline_sse(query: str, use_rag: bool = True) -> AsyncIterator[d
                 best_attempt = {
                     "score": breakdown.weighted_score,
                     "answer1": answer1, "answer2": answer2,
+                    # Also keep the randomized order the Verifier/Judge actually
+                    # saw. The combiner needs THIS order, not the UI order - see
+                    # the comment at the Stage 6 call below.
+                    "judge_view_1": judge_view_1, "judge_view_2": judge_view_2,
                     "verification": verification, "judgement": judgement,
                 }
 
@@ -419,8 +423,33 @@ async def _run_pipeline_sse(query: str, use_rag: bool = True) -> AsyncIterator[d
         )
 
         # ── Stage 6: Combiner ────────────────────────────────────────────────
+        # The combiner is fed the JUDGE-VIEW order, not the UI order, for two
+        # independent reasons:
+        #
+        # 1. CORRECTNESS. `verification` and `judgement` are the raw agent text,
+        #    produced against judge_view_1/judge_view_2 - the randomized order.
+        #    Their prose labels answers "Answer 1"/"Answer 2" in THAT order (the
+        #    judge's Overall Reasoning names them explicitly). Only the *parsed
+        #    scores* were remapped back to UI order via remap_ab. Passing UI-order
+        #    answers alongside judge-order feedback meant that whenever swap was
+        #    True - half of all queries - the combiner was told "Answer 1 is more
+        #    relevant" about the answer sitting in the OTHER slot. It was acting
+        #    on feedback pointing at the wrong text.
+        #
+        # 2. POSITION BIAS. answer1 is always LLaMA 3 here (only the judge's view
+        #    was randomized), so the combiner used to receive LLaMA 3 in slot 1 on
+        #    every single query. training/combiner_bias_analysis.py measured a
+        #    +10.8 pp pull toward whatever occupies slot 1, which is a property of
+        #    prompt reading rather than model identity and so is NOT fixed by
+        #    changing the combiner model. Using the randomized order spreads that
+        #    pull evenly across the two generators instead of parking it on LLaMA 3
+        #    every time. See RESEARCH_LOG.md Section 37.
         yield _emit("stage", {"stage": 6, "name": "Combiner", "status": "running"})
-        combiner_prompt = build_combiner_prompt(query, answer1, answer2, verification, judgement)
+        combiner_prompt = build_combiner_prompt(
+            query,
+            best_attempt["judge_view_1"], best_attempt["judge_view_2"],
+            verification, judgement,
+        )
         final_answer = await loop.run_in_executor(None, combiner_agent.run, combiner_prompt)
         yield _emit("result", {"stage": 6, "name": "Combiner", "output": final_answer})
 

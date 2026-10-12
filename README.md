@@ -213,9 +213,25 @@ python main.py "Explain SOLID principles in software engineering."
 |------|-------|-------|---------|
 | 1 | LLaMA 3 Agent | `llama3` | Generates the first complete answer |
 | 2 | Mistral Agent | `mistral` | Generates an alternative answer |
-| 3 | Verifier Agent | `llama3` | Fact-checks both answers (hallucination detection) |
-| 4 | Judge Agent | `mistral` | Scores each answer (accuracy, completeness, clarity) |
-| 5 | Combiner Agent | `llama3` | Synthesises the best final answer |
+| 3 | Verifier Agent | `phi3:latest` | Independently scores both answers on the 8-factor rubric |
+| 4 | Judge Agent | `qwen3.5:9b` | Independently scores both answers and declares a winner |
+| 5 | Combiner Agent | `gemma2:9b` | Synthesises the best final answer |
+
+Every evaluator is a **different model family from the two generators**, and no
+model both writes an answer and evaluates or merges it. That separation is
+deliberate and was arrived at empirically:
+
+- **Verifier / Judge** moved off the generator models because a model scoring its
+  own output is not an independent check. The Judge is `qwen3.5:9b` with internal
+  reasoning disabled - it replaced CompassJudger-1, which gave all 8 rubric
+  criteria the identical score on 75-80% of answers once scored blind
+  (RESEARCH_LOG.md Section 14).
+- **Combiner** moved off `llama3` because `llama3` is also a generator, so it was
+  merging its own writing against Mistral's. Measured on all 5000 rows: a
+  **+18.1 pp** preference for its own answer with position held fixed, plus a
+  **+10.8 pp** pull toward whichever answer sat first in the prompt
+  (RESEARCH_LOG.md Section 37). `gemma2:9b` has no answer of its own among the
+  two it merges, so that term is removed by construction.
 
 ### Scoring (Offline — runs between Tasks 3 and 4)
 
