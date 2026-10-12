@@ -42,3 +42,7 @@ training/combiner_replay.db
 training/replay_run.log
 tunnel_app.log
 tunnel_*.log
+
+# V-Ideas build: the unpacked template tree is an intermediate (rebuild with
+# deliverables/videas/fill_template.py); the packed .pptx is the deliverable.
+deliverables/videas/unpacked/
