@@ -57,3 +57,7 @@ deliverables/package.json
 deliverables/group_photo_slot.jpg
 deliverables/V_Ideas_Agentic_Multi_LLM.pptx
 deliverables/report/_*.png
+
+# Any unpacked deck working tree - these contain the team photograph.
+deliverables/videas*/unpacked/
+deliverables/*/unpacked/
