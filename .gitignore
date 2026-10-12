@@ -46,3 +46,6 @@ tunnel_*.log
 # V-Ideas build: the unpacked template tree is an intermediate (rebuild with
 # deliverables/videas/fill_template.py); the packed .pptx is the deliverable.
 deliverables/videas/unpacked/
+deliverables/node_modules/
+deliverables/package-lock.json
+deliverables/package.json
