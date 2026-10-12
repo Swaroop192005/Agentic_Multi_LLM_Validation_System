@@ -55,6 +55,24 @@ DOC_PRINT_CSS = """
 </style>
 """
 
+# Print CSS for the conference poster. FYP_POSTER.html is a fixed 1060px-wide
+# layout with no print rules of its own, and its content measures 1060 x 1732 CSS
+# px - an aspect ratio of 1:1.634. That is TALLER than A1 portrait (1:1.416), so
+# forcing @page size:A1 would letterbox it with dead bands down both sides. The
+# page is therefore sized to the artwork itself (a few px of slack so nothing
+# clips at the edge), giving a pixel-exact single page that a print shop can
+# scale proportionally to A1 or A0 without distortion.
+POSTER_PRINT_CSS = """
+<style>
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  @page { size: 1064px 1738px; margin: 0; }
+  html, body { margin: 0 !important; padding: 0 !important; background: #fff; }
+  .poster, body > div { box-shadow: none !important; }
+}
+</style>
+"""
+
 # Print CSS for the slide deck: one landscape page per slide, chrome hidden.
 DECK_PRINT_CSS = """
 <style>
@@ -154,6 +172,13 @@ def main():
     if paper.exists():
         render_pdf(paper, OUT / "research-paper.pdf", landscape=False)
 
+    # 3c: conference poster (lives at the repo root, not in docs/)
+    poster = ROOT / "FYP_POSTER.html"
+    if poster.exists():
+        poster_pr = BUILD / "FYP_POSTER_print.html"
+        make_print_html(poster, POSTER_PRINT_CSS, poster_pr)
+        render_pdf(poster_pr, OUT / "fyp-poster.pdf", landscape=False)
+
     # 4: research log (markdown -> html -> pdf)
     md = ROOT / "RESEARCH_LOG.md"
     log_html = BUILD / "research-log_print.html"
@@ -161,7 +186,8 @@ def main():
     render_pdf(log_html, OUT / "research-log.pdf", landscape=False)
 
     print("\nDone. PDFs written to docs/:")
-    for f in ("project-report.pdf", "defense-prep.pdf", "presentation.pdf", "research-log.pdf"):
+    for f in ("project-report.pdf", "defense-prep.pdf", "presentation.pdf",
+              "research-paper.pdf", "fyp-poster.pdf", "research-log.pdf"):
         p = OUT / f
         size = p.stat().st_size // 1024 if p.exists() else 0
         print(f"  {f}  ({size} KB)")
