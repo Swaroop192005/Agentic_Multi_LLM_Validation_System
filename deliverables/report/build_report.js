@@ -22,8 +22,8 @@ const path = require("path");
 const {
   Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType,
   PageBreak, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType,
-  Footer, PageNumber, NumberFormat, TableOfContents, LevelFormat, convertInchesToTwip,
-  ImageRun,
+  Footer, PageNumber, NumberFormat, LevelFormat, convertInchesToTwip,
+  ImageRun, PositionalTab, PositionalTabAlignment, PositionalTabLeader, PositionalTabRelativeTo,
 } = require("docx");
 
 const C = require("./content.js");
@@ -129,6 +129,74 @@ function makeTable(spec) {
 }
 
 const dotted = (n = 28) => "_".repeat(n);
+
+
+/* ---- Table of Contents -------------------------------------------------
+ * Written as static text, NOT as a Word TOC field.
+ *
+ * A TOC field made the document effectively un-exportable: Word hung for
+ * 10+ minutes on both Fields.Update() and ExportAsFixedFormat(), and removing
+ * the field alone dropped the export to well under a minute. A field also
+ * obliges the reader to remember to refresh it, and a stale TOC is worse than
+ * none.
+ *
+ * Page numbers come from toc_pages.json, produced by measure_toc.js, which
+ * asks Word for the real page of every heading. The entry COUNT does not change
+ * between builds, so the contents pages occupy a fixed height and one
+ * measure-then-rebuild pass converges.
+ */
+function tocEntries() {
+  let pages = {};
+  const mapFile = path.join(__dirname, "toc_pages.json");
+  if (fs.existsSync(mapFile)) {
+    // PowerShell's Set-Content -Encoding UTF8 writes a BOM, and JSON.parse
+    // rejects it. Strip it, and let a genuine parse failure be LOUD - a silent
+    // catch here produced a contents page with no page numbers at all.
+    const raw = fs.readFileSync(mapFile, "utf8").replace(/^﻿/, "");
+    pages = JSON.parse(raw);
+    console.log(`  TOC: ${Object.keys(pages).length} measured page numbers loaded`);
+  } else {
+    console.warn("  TOC: no toc_pages.json - rendering contents without page numbers");
+  }
+
+  const out = [];
+  const line = (text, page, bold, indent) => new Paragraph({
+    children: [
+      run(text, { bold }),
+      new TextRun({
+        children: [
+          new PositionalTab({
+            alignment: PositionalTabAlignment.RIGHT,
+            relativeTo: PositionalTabRelativeTo.MARGIN,
+            leader: PositionalTabLeader.DOT,
+          }),
+          page == null ? "" : String(page),
+        ],
+        font: FONT, size: SZ, bold,
+      }),
+    ],
+    indent: { left: convertInchesToTwip(indent) },
+    spacing: { line: 240, after: bold ? 60 : 20 },
+  });
+
+  for (const [label, front] of [["Acknowledgements", true], ["Abstract", true],
+                                ["List of Figures", true], ["List of Tables", true],
+                                ["List of Symbols and Abbreviations", true]]) {
+    out.push(line(label, pages[label], false, 0));
+  }
+  C.CHAPTERS.forEach((ch, ci) => {
+    const title = `Chapter ${ci + 1}    ${ch.title}`;
+    out.push(line(title, pages[title], true, 0));
+    ch.sections.forEach((sec, si) => {
+      const sub = `${ci + 1}.${si + 1}    ${sec.heading}`;
+      out.push(line(sub, pages[sub], false, 0.28));
+    });
+  });
+  out.push(line("References", pages["References"], true, 0));
+  out.push(line("Appendices", pages["Appendices"], true, 0));
+  C.APPENDICES.forEach((a) => out.push(line(a.title, pages[a.title], false, 0.28)));
+  return out;
+}
 
 /* --------------------------------------------------- front matter pages --- */
 function titlePage() {
@@ -406,9 +474,7 @@ const doc = new Document({
         ...C.ABSTRACT.map((p) => body(p)),
         pageBreak(),
         h1("Table of Contents"),
-        new TableOfContents("Right-click and choose “Update Field” to populate this table.", {
-          hyperlink: true, headingStyleRange: "1-2",
-        }),
+        ...tocEntries(),
         pageBreak(),
         ...listLines("List of Figures",
           C.FIGURE_ORDER.map((k) => `Figure ${C.FIGURES[k].n}    ${C.FIGURES[k].caption}`)),
