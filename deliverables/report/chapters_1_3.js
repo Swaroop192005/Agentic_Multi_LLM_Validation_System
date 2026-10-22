@@ -301,6 +301,18 @@ const CH3 = {
       ],
     },
     {
+      heading: "Why Six Signals, and Why These Weights",
+      paras: [
+        `The weights in Table 3.3 are a reasoned prior rather than a fitted optimum, and the reasoning is given here so that a reader can disagree with it specifically rather than in general.`,
+        `The design starts from a question about failure rather than about accuracy: what does each signal fail to notice? The Judge assesses correctness directly but is a language model, so it fails where models fail - confident fabrication, plausible-sounding specifics, and its own stylistic preferences. Semantic similarity cannot assess correctness at all, but it never mistakes an off-topic answer for an on-topic one, which the Judge sometimes does when the off-topic answer is well written. Cross-model agreement is blind to shared errors between the two generators, but catches the case where one has gone astray on its own. The external checks cannot assess reasoning, but they are the only signals not produced by a language model at all, so they fail independently of every other signal in the set.`,
+        `No signal is reliable alone, and the failure modes do not overlap. That is the argument for blending, and Section 5.6 tests it: thirteen of the fifteen signal pairs correlate below 0.13, so the signals really are measuring different things rather than restating one measurement six times.`,
+        `The Judge carries the largest single weight at 0.40 because it is the only signal that assesses correctness directly. It is deliberately held below one half so that the remaining five together can outvote it: an answer the Judge likes, which is off-topic, which the other generator contradicts, and which fails both encyclopedia checks, should not pass the gate on the Judge's say-so.`,
+        `The external checks total 0.25 between them. That is high for signals available on fewer than half of attempts, and it is deliberate: when an external source does speak, it is the only evidence in the set that does not originate from a model, and it should count for something. The renormalisation described in Section 3.7 means their absence costs nothing rather than scoring zero.`,
+        `The two agreement signals take 0.10 each, the lowest weights, because both are indirect. Agreement is evidence about consistency, not correctness, and two models can agree while both being wrong - a failure mode that is more likely, not less, when they share training data.`,
+        `A systematic weight sweep against the control-group improvement criterion would establish whether this allocation is near-optimal or merely defensible. That sweep has been only partially run and is listed in Chapter 8. The honest position is that the weights are justified by an argument about independence, corroborated by the correlation structure, and not yet optimised.`,
+      ],
+    },
+    {
       heading: "The Regeneration Gate",
       paras: [
         `If the weighted confidence score for an attempt falls below the threshold, the pipeline discards nothing but proceeds to generate again, to a maximum of two further attempts. The highest-scoring attempt is retained even if a later attempt scores lower, so regeneration cannot make the shipped answer worse than it would otherwise have been. This is a deliberate asymmetry: the loop can only improve the outcome or leave it unchanged.`,

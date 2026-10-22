@@ -103,6 +103,16 @@ const CH4 = {
       ],
     },
     {
+      heading: "Operational Incidents",
+      paras: [
+        `Three classes of failure dominated the run, and all three are specific to orchestrating several large models on one machine rather than to anything about language models. They are recorded because each cost real time and none is documented in the frameworks' own guidance.`,
+        `Orphaned inference subprocesses. The model runtime spawns a child inference process per loaded model. On Windows these children survive a normal restart of their parent, because there is no cascade kill, so every manual restart silently left one behind holding video memory. They accumulated across restarts until the next evaluator call wedged for want of VRAM. The symptom - an intermittent hang that got more frequent the longer the day went on - pointed at the models rather than at process hygiene, which is why it took a while to find. The watchdog now enumerates and kills the inference children directly rather than only their parent.`,
+        `Racing watchdogs. Stopping the monitoring harness did not reliably terminate the underlying shell, so multiple watchdog instances accumulated and competed, each launching its own generator. The result was duplicate work and a corrupted sense of progress. Watchdogs are now killed by process id rather than by asking the harness to stop them.`,
+        `Silent total stoppage. Three separate gaps occurred - 17 hours, 40 minutes, and four full days - in which every pipeline process had died and only the model runtime remained. The cause was that all of them, including the watchdog, were launched from within an interactive session's process tree, which does not survive terminal closure, session teardown, or the machine sleeping. A keep-awake routine blocked automatic idle sleep but not manual sleep or session loss. Each gap was discovered only when somebody next looked.`,
+        `The common thread is that a watchdog inside the thing it is watching is not a watchdog. The fix was to move supervision entirely outside the session, into a scheduled task that the operating system runs whether or not anyone is logged into a terminal.`,
+      ],
+    },
+    {
       heading: "Resilience",
       paras: [
         `Three separate multi-hour gaps in generation occurred before resilience was addressed, caused by terminal closure, session teardown and the machine sleeping. In each case the harness had stopped and nothing restarted it, and the loss was discovered only when progress was next inspected.`,
@@ -157,17 +167,122 @@ const CH5 = {
       figure: "attempts",
     },
     {
-      heading: "Judge Selection",
+      heading: "Does Regeneration Improve the Answer?",
       paras: [
-        `Several candidate judge models were evaluated. The selection criterion could not be agreement with a reference, which was unavailable, so it was per-criterion discrimination: a useful judge must produce differentiated scores across the eight rubric criteria rather than collapsing them onto a single impression.`,
-        `One candidate, CompassJudger-1, assigned all eight criteria an identical score on between 75 and 80 per cent of answers once it was scoring blind - returning, for instance, 9/9/9/9/9/9/9/9. A rubric that always returns the same value on every axis carries almost no information beyond a single holistic score, and defeats the purpose of having eight criteria. It was rejected on that basis.`,
-        `qwen3.5:9b, with internal reasoning disabled, produces genuinely differentiated per-criterion scores and was adopted. The requirement to disable reasoning was itself discovered by failure: with reasoning enabled the model returned empty responses on long rubric prompts, having spent its entire token budget deliberating internally.`,
+        `The regeneration loop is the system's only corrective mechanism, and the report has so far described how often it fires without establishing that it works. Of the 5,000 questions, 2,004 produced two or more attempts, which permits a direct before-and-after comparison on the same question.`,
+      ],
+      table: {
+        caption: "Table 5.9: Score change across regeneration attempts",
+        head: ["Transition", "n", "Mean change", "Median change", "Improved"],
+        rows: [
+          ["Attempt 1 → attempt 2", "2,004", "+0.0130", "+0.0136", "59.3%"],
+          ["Attempt 2 → attempt 3", "1,427", "+0.0132", "+0.0117", "—"],
+        ],
+      },
+      paras2: [
+        `Regeneration helps on average, and the effect is consistent across both transitions: roughly +0.013 on a zero-to-one scale each time. In the context of a threshold at 0.72 and a corpus standard deviation of 0.044, that is a modest but real shift - about three tenths of a standard deviation over two retries.`,
+        `The more important number is the one that is not an average. A second attempt improved on the first in only 59.3 per cent of cases, which means that in 40.7 per cent the retry produced a worse answer than the one it was meant to replace. Regeneration is not a reliable repair; it is a resample from a distribution whose mean is slightly higher.`,
+        `That finding is what justifies a design decision made earlier on intuition. The pipeline retains the highest-scoring attempt rather than the most recent one, and the corpus shows how much work that rule does: the best attempt was the last attempt in only 56.8 per cent of multi-attempt questions. In the remaining 43.2 per cent, a system that simply shipped its latest retry would have shipped a worse answer than one it had already produced and discarded.`,
+        `Stated plainly, nearly half the value of the regeneration loop comes not from regenerating but from remembering. This is worth emphasising because the obvious implementation - overwrite and retry until the gate passes or the budget runs out - would have discarded that value silently, and no aggregate statistic would have revealed the loss.`,
+      ],
+    },
+    {
+      heading: "Judge Selection: Four Models and a Methodology Error",
+      paras: [
+        `Selecting the Judge took four candidate models and two false starts, and the sequence is reported in full because the criterion that eventually worked is not the one that would be chosen by default.`,
+        `The first question was whether the ceiling-clustering of Section 5.6 was specific to the incumbent model. Four further format-compatible models were run on an identical prompt and the same real question-answer pair.`,
+      ],
+      table: {
+        caption: "Table 5.12: Five candidate judges on one real question-answer pair",
+        head: ["Model", "Answer A", "Answer B"],
+        rows: [
+          ["qwen2.5 (incumbent)", "~76/80", "~76/80"],
+          ["gemma2:9b", "72/80", "75/80"],
+          ["llama3.1:8b", "72/80", "73/80"],
+          ["mixtral", "72/80", "76/80"],
+          ["CompassJudger-1-7B", "72/80", "75/80"],
+        ],
+      },
+      paras2: [
+        `All five models, across four architectures, converged on 72-76 out of 80. That looked like a robust consensus, and treating it as one would have been a methodology error: testing a single strong answer repeatedly only establishes that models agree a good answer is good. It says nothing about whether they can tell a bad answer from a good one, which is the only property that matters for a gate.`,
+        `The corrected test constructed a deliberately broken answer - factually wrong, internally contradictory, containing irrelevant claims - and presented it alongside a solid one for the same question. This is the discrimination test that Section 5.7 later applied to the Verifier, and it is the criterion on which the Judge was ultimately chosen.`,
+        `A head-to-head on twenty real question-answer triples, forty scores per model, then compared the incumbent against the most promising alternative.`,
+      ],
+      table2: {
+        caption: "Table 5.13: Head-to-head on 20 real triples (N=40 scores per model)",
+        head: ["Metric", "qwen2.5", "CompassJudger-1-7B"],
+        rows: [
+          ["Mean", "71.9/80 (89.9%)", "70.0/80 (87.5%)"],
+          ["Standard deviation", "3.7", "3.8"],
+          ["Min / Max", "64 / 80", "60 / 73"],
+          ["Scored ≥75", "20.0%", "0.0%"],
+        ],
+      },
+      paras3: [
+        `CompassJudger-1 never once scored 75 or above across forty real evaluations, where the incumbent reached the maximum of 80 one time in five. Combined with evidence that it still penalised genuinely wrong content, this read as a real calibration improvement, and the Judge was switched.`,
+        `That decision was wrong, and the reason it was wrong is the most useful finding in this section. Mean and spread are aggregate statistics, and they concealed the failure that mattered. Inspecting per-criterion scores rather than totals showed that CompassJudger-1 was giving all eight criteria the identical value on most answers - 9/9/9/9/9/9/9/9 - with boilerplate justifications that were sometimes word-for-word identical between two different answers.`,
+      ],
+      table3: {
+        caption: "Table 5.14: CompassJudger-1 flat-scoring rate (all eight criteria identical)",
+        head: ["Condition", "n", "All-8-identical"],
+        rows: [
+          ["Anchored on the Verifier's scores (pre-fix)", "40", "10%"],
+          ["Blind, rubric v3", "5", "80%"],
+          ["Blind, rubric v4", "4", "75%"],
+          ["Blind, rubric v4, generation continued", "43", "~74%"],
+        ],
+      },
+      paras4: [
+        `The rate got worse after the independence bug was fixed, not better. While anchored on the Verifier's output the model had been inadvertently inheriting the Verifier's genuine variation; scoring independently exposed that its own default behaviour was to write plausible prose around a single flat number. A bug had been masking a worse problem, and fixing the bug is what revealed it.`,
+        `The final comparison, at full scale under the production rubric, settled the choice.`,
+      ],
+      table4: {
+        caption: "Table 5.15: Final judge comparison (N=40 blind evaluations each)",
+        head: ["Metric", "qwen3.5:9b", "CompassJudger-1-7B"],
+        rows: [
+          ["Mean", "65.5/80 (81.9%)", "69.3/80 (86.7%)"],
+          ["Standard deviation", "9.5", "9.3"],
+          ["Min / Max", "19 / 78", "16 / 73"],
+          ["Scored ≥75", "10.0%", "0.0%"],
+          ["Flat (all 8 criteria identical)", "0.0%", "57.5%"],
+        ],
+      },
+      paras5: [
+        `The two standard deviations are nearly identical, and on that statistic alone the models look equivalent. They are not. CompassJudger-1's spread comes from which single flat value it happens to select per question, not from per-criterion analysis; qwen3.5:9b never produced a flat score across forty evaluations. The selection criterion that distinguishes them - per-criterion variance - is not one that appears in any standard evaluation summary, and would have been missed by comparing means.`,
+        `qwen3.5:9b was adopted, with internal reasoning disabled for the reason given in Section 3.3.`,
+      ],
+    },
+    {
+      heading: "Calibrating the Rubric: Four Revisions",
+      paras: [
+        `The eight-factor rubric presented in Section 3.4 is the fourth version. The three it replaced each failed in an instructive way, and the sequence is reported here because the failures were not obvious in advance and the fix that seemed most natural did not work.`,
+        `The first version gave each criterion a single generic descriptor - "claims are accurate", "well-structured and easy to read" - and relied on the model to map quality onto a zero-to-ten scale. Across the first ~870 records, Judge totals clustered hard against the ceiling: mean 76.3 out of 80, standard deviation 3.4, with 81 per cent of all scores falling in the 75-80 band. The rubric was not discriminating between answers of different quality; it was agreeing that everything was good.`,
+        `The obvious remedy was tried first and is the most useful result in this section because it failed. The band descriptions were rewritten to be explicitly stricter - "competent/adequate" recalibrated from 7-9 down to 5-6, and an explicit requirement to justify any score of 9 or 10 before awarding it. Eight fresh completions under the new prompt averaged 76.4 out of 80 with the same tight spread. The change had no measurable effect at all.`,
+        `The conclusion drawn was that abstract calibration language does not override an evaluator model's systematic positivity, even when the instruction to be harsh is explicit. Telling a model to be stricter is not the same as giving it a basis on which to be stricter. Everything that worked subsequently followed from that distinction.`,
+      ],
+      table: {
+        caption: "Table 5.11: Rubric revisions and their effect on Judge behaviour",
+        head: ["Version", "Change", "Outcome"],
+        rows: [
+          ["v1 / v2", "Generic one-line descriptor per criterion", "Mean 76.3/80, SD 3.4, 81% of scores in 75-80 — not discriminating"],
+          ["(interim)", "Stricter band language; justification required for 9-10", "Mean 76.4/80, same spread — no measurable effect"],
+          ["v3", "Narrower bands; must find a specific flaw before awarding ≥7, else cap at 6", "Forces an evidence step rather than a judgement"],
+          ["v4", "Concrete per-criterion anchors + explicit anti-default rule", "Adopted; differentiated per-criterion scores (Table 5.5)"],
+        ],
+      },
+      paras2: [
+        `Version 3 changed the shape of the task rather than its wording. Instead of asking for a calibrated number, it required the model to actively search for a specific flaw before awarding any score of seven or above, and to cap the criterion at six if it found one. This converts scoring from an impression into a search with an observable outcome, which a language model is considerably better at.`,
+        `Version 4 addressed a different failure that surfaced immediately after the independence fix of Section 5.5. The Judge's total came out as exactly 72 on three unrelated questions in the first five records - CRISPR, quantum entanglement, and a machine-learning comparison. A value recurring across unrelated content is the signature of a comfortable default rather than content-driven scoring.`,
+        `The diagnosis was that all eight criteria shared the same vague standard, which gives a model little basis to distinguish a four from a six on any one of them. Version 4 rewrote every criterion with a concrete, criterion-specific differentiator - Completeness's mid-band became "covers the obvious parts but skips a sub-part, an edge case, or a caveat a subject-matter expert would expect" rather than a generic quality statement - and added an explicit anti-default rule. The per-criterion variation reported in Table 5.5 is the result.`,
+        `One procedural consequence is worth recording. Because the scoring regime changed, roughly 435 records generated under the lenient rubric were archived rather than merged, and generation restarted from scratch. Mixing two scoring standards in one corpus would have made every aggregate statistic in this chapter uninterpretable, and the cost of regenerating was far lower than the cost of a dataset nobody could reason about.`,
       ],
     },
     {
       heading: "An Evaluator Coupling Error",
       paras: [
-        `A more instructive failure concerned a signal rather than a model. A "second opinion" agreement signal was found to have been derived, indirectly, from the Judge's own output. It therefore agreed with the Judge by construction, and inflated the confidence score wherever the Judge was confident - including wherever the Judge was confidently wrong.`,
+        `A more instructive failure concerned the evaluators' independence itself. Checking whether the Verifier and the Judge were really scoring separately, a query over the live database returned something worse than mere similarity: 32 of 37 records - 86 per cent - had Judge totals matching Verifier totals exactly, digit for digit, across all eight criteria for both answers. Two genuinely independent evaluations do not land on the same sixteen numbers that often.`,
+        `The cause was in the Judge's prompt builder, which received the Verifier's full raw output - including its per-criterion numbers - and inserted it under the heading "Verifier's independent scores (a third-party opinion, not ground truth)". The system prompt instructed the Judge to form its own judgement, but at temperature 0.1 with identical rubric anchoring, an instruction not to be influenced by a number placed directly in front of the model is not an effective control. The Judge was transcribing rather than judging.`,
+        `The downstream consequence was that the Verifier-Judge agreement signal agreed with itself by construction, inflating the confidence score wherever the Judge was confident - including wherever the Judge was confidently wrong.`,
         `The clue was not a crash or an anomaly in the data. The clue was that the signal performed suspiciously well: it correlated with the Judge far more tightly than an independent second opinion plausibly could. Tracing where its inputs came from showed the coupling. It was removed from the score entirely.`,
         `This is the first of four measurement errors catalogued in Section 5.10, and it established the habit that found the other three: a result that looks too clean is a reason to check the derivation, not a reason to celebrate.`,
       ],
@@ -212,6 +327,32 @@ const CH5 = {
       paras: [
         `Verifier-Judge agreement averages 0.837 with a median of 0.850 across the corpus. Two independently prompted models, from different families, scoring the same answers against the same rubric without sight of each other's scores, agree to that degree. This is the single strongest piece of evidence that the rubric is being applied consistently rather than idiosyncratically.`,
         `Cross-model agreement between the two candidate answers, measured as pairwise BERTScore, averages only 0.220. The two generators produce substantively different text on most questions. For the diversity argument of Section 3.3 this is good news: two models that said the same thing would make the comparison vacuous. For the signal itself it is a limitation, since a signal clustered at the low end of its range has little dynamic range to contribute, and its 0.10 weight therefore does less work than the nominal allocation suggests.`,
+      ],
+    },
+    {
+      heading: "Are the Six Signals Independent?",
+      paras: [
+        `The confidence score combines six signals on the premise that they carry different evidence. If they were strongly correlated the blend would be theatre - six numbers measuring one thing, with the weights creating an illusion of breadth. The corpus allows the premise to be tested directly.`,
+      ],
+      table: {
+        caption: "Table 5.10: Pearson correlation between confidence signals (5,000 final answers)",
+        head: ["", "Judge", "Simil.", "Agree.", "Ver-Jdg", "Wiki", "Wikidata"],
+        rows: [
+          ["Judge rubric", "1.00", "−0.07", "0.12", "0.61", "0.05", "−0.02"],
+          ["Similarity", "−0.07", "1.00", "−0.00", "−0.01", "−0.08", "−0.08"],
+          ["Model agreement", "0.12", "−0.00", "1.00", "0.25", "0.01", "−0.04"],
+          ["Verifier–Judge", "0.61", "−0.01", "0.25", "1.00", "0.04", "−0.05"],
+          ["Wikipedia", "0.05", "−0.08", "0.01", "0.04", "1.00", "0.11"],
+          ["Wikidata", "−0.02", "−0.08", "−0.04", "−0.05", "0.11", "1.00"],
+        ],
+      },
+      paras2: [
+        `The premise holds. Of the fifteen distinct signal pairs, thirteen have an absolute correlation below 0.13, and most sit within a few hundredths of zero. The signals are close to mutually orthogonal, which is the strongest possible justification for blending them: each contributes evidence the others do not.`,
+        `Three entries deserve individual comment.`,
+        `The Judge and the Verifier-Judge agreement signal correlate at 0.61, by some distance the largest value in the table. This is partly by construction - the agreement measure is computed against the Judge's own total, so the two cannot be independent - and it means the confidence score carries roughly 0.50 of effective weight on the Judge's opinion rather than the nominal 0.40. That is a design observation rather than an error, but it is not what the weight table implies, and it is recorded here rather than left for a reader to derive.`,
+        `Wikipedia and Wikidata correlate at only 0.11 despite both being external encyclopedia checks on the same answer. Two sources of the same kind would be expected to agree far more strongly. The low value vindicates the choice of structurally different sources - one prose, one a knowledge graph - because they evidently fail on different questions, which is precisely what makes their combination informative.`,
+        `Semantic similarity is essentially uncorrelated with everything, including the Judge at −0.07. It measures whether the answer is about the question, which no other signal measures, and it is the clearest case in the table of a signal earning its weight by being different rather than by being strong.`,
+        `Against the composite score, the signals rank Judge 0.73, Wikipedia 0.61, Verifier-Judge 0.57, Wikidata 0.29, model agreement 0.27 and similarity 0.25. Wikipedia's influence is notably higher than its 0.15 weight suggests, because on the 44 per cent of attempts where it is available it varies widely, whereas several other signals cluster.`,
       ],
     },
     {
@@ -371,7 +512,7 @@ const CH5 = {
     {
       heading: "Measurement Errors Detected and Corrected",
       paras: [
-        `Four errors were identified during the project that would have corrupted reported results had they gone unnoticed. They are recorded here because a report presenting only its successes misrepresents how the work was actually done, and because each was found by the same habit rather than by luck: a result that looked too clean was checked instead of accepted.`,
+        `Five errors were identified during the project that would have corrupted reported results had they gone unnoticed. They are recorded here because a report presenting only its successes misrepresents how the work was actually done, and because each was found by the same habit rather than by luck: a result that looked too clean was checked instead of accepted.`,
       ],
       table: {
         caption: "Table 5.4: Measurement errors and corrections",
@@ -381,12 +522,27 @@ const CH5 = {
           ["A 'second opinion' signal was derived from the Judge's own output", "It correlated with the Judge too tightly to be independent", "Self-agreement silently inflating confidence", "Signal removed from the score"],
           ["Threshold analysis applied one sampling weight although the control rate changed mid-run", "ROC gave AUC ≈ 0.51 and an optimum below the current threshold, contradicting a clean earlier result", "A mis-weighted, wrong threshold", "Per-record weighting by the rate actually in force"],
           ["Restart-orphaned attempts produced duplicate final rows for four questions", "5,003 final rows for 5,000 questions", "Aggregate statistics over a corpus of the wrong size", "Rows corrected; the write now targets a unique row id"],
+          ["The results viewer labelled winners by prompt slot, not model identity", "A screenshot showing 23 of 24 recent wins to one model", "A false conclusion that the pipeline was overwhelmingly biased", "Winner name derived from the recorded identity columns"],
         ],
       },
       paras2: [
-        `The third and fourth deserve comment, because both are of a kind that produces plausible output rather than an error.`,
+        `The third, fourth and fifth deserve comment, because each produces plausible output rather than an error.`,
         `The third arose because the control probability was raised from 0.08 to 0.60 partway through the run. Applying the current value to every control record undercounts those sampled under the old rate by a factor of 7.5, which corrupts sensitivity, specificity and AUC - all of which depend on population composition - while leaving the simple per-band rates untouched. The symptom was that the ROC analysis contradicted a band comparison that had already been established as clean and significant. Two analyses of the same data disagreeing is informative; the disagreement was traced to the weighting rather than averaged away.`,
         `The fourth is a schema trap. Attempts were being marked final by matching on question index and attempt number, a pair that appears unique but is not. If the process is interrupted between inserting an attempt and marking it final, the question is reprocessed from scratch on restart, and its fresh first attempt shares that pair with the orphaned one - so both get flagged. Four questions were affected. The fix was to return the row identifier at insertion and target the update by that identifier alone.`,
+        `The fifth never touched the data at all, which is what makes it worth recording. The results viewer rendered the winning model's name as "A means LLaMA 3, B means Mistral" - true before answer order was randomised, and never updated afterwards. The stored data was correct throughout; only the display was wrong. It surfaced when a screenshot showed 23 of 24 recent questions won by one model, which looked like overwhelming bias. Checking those exact rows in the database showed the opposite: the coin flip had simply landed the same way for a stretch, and the true split was close. A reader of that screen would have drawn a firm and entirely false conclusion about the system, from data that was never wrong.`,
+      ],
+    },
+    {
+      heading: "The Retrieval Path Was Inert Throughout",
+      paras: [
+        `Section 3.10 describes a retrieval subsystem with a minimum-similarity gate, and Section 3.4 defines a Context Relevance criterion scored against retrieved material. Both descriptions are accurate about the implementation and misleading about the corpus, and the discrepancy was found late.`,
+        `The batch harness calls its per-attempt routine with the retrieval-context parameter left at its default of empty, and never overrides it. Every one of the 5,000 questions in the calibration corpus therefore ran with retrieval completely inert. No chunk was ever retrieved, no similarity gate was ever evaluated, and the Context Relevance criterion was scored by its fallback definition - whether the answer stays on topic - on every single record.`,
+        `Three consequences follow, and all three limit what this report can claim.`,
+        `First, the minimum-similarity threshold of 0.35 has never been calibrated and, unlike the confidence threshold, currently cannot be. This is not a sample-size problem that more generation would solve; it is the absence of a data path. The parameter only executes in the live interactive service, which sees a tiny fraction of the batch harness's traffic, and until recently that service recorded no retrieval outcome anywhere persistent. There is nothing in the corpus against which to fit it.`,
+        `Second, the Context Relevance scores reported in Table 5.5 - Judge 8.38, Verifier 9.25 - measure topic adherence, not fidelity to supplied material. They should not be read as evidence that the system grounds answers in documents, because on this corpus it never had any.`,
+        `Third, the retrieval subsystem as a whole is untested at scale. It works in the live service and was exercised during development, but no claim in Chapter 5 rests on it, and none should be read as doing so.`,
+        `Instrumentation has since been added: the live service now logs, per query, whether context was injected, how many chunks, and the similarity of the best match. That provides the data path the calibration needs, by the same control-group method used for the confidence threshold - injecting context on a random fraction of queries that fall below the gate, to produce the observations the gate otherwise suppresses. The calibration itself remains outstanding and is listed in Chapter 8.`,
+        `This is reported in the results chapter rather than buried in limitations because it bears directly on how two of the tables above should be read.`,
       ],
     },
     {
@@ -397,6 +553,9 @@ const CH5 = {
         `Internal validity. The AUC of 0.629 indicates weak discrimination. The threshold is calibrated on a real relationship, demonstrated significant by an independent test, but it is not a strong one, and the near-flat J curve reflects that. A stronger predictor would produce a sharper optimum.`,
         `External validity. All results are specific to this model set, this corpus and this rubric. The protocol is expected to transfer and the numbers are not; this has not been tested.`,
         `Statistical conclusion validity. The very small p-values reported for the bias effects reflect a large corpus and should be read as evidence that the effects are real, not that they are large. The effect sizes - 18.1 and 10.8 percentage points - are the quantities of practical interest, and they are reported alongside every p-value for that reason.`,
+        `Instrumentation validity. The retrieval path was inert for the entire corpus (Section 5.14), so the Context Relevance scores measure topic adherence rather than fidelity to supplied material, and no claim here rests on the retrieval subsystem. Separately, two of the five errors in Table 5.4 were in the measurement and display layers rather than in the pipeline, which is a reminder that a correct system observed through a faulty instrument is indistinguishable from a faulty system.`,
+        `Sample size in the replay. The controlled replay of Section 5.9 used 400 of the 5,000 questions. At that size the 95 per cent interval on a proportion is roughly five percentage points, which is comfortably narrower than the effects reported - a 30-point shift in position preference and a 27-point shift in identity lean - but not narrow enough to support fine distinctions. The claim that the replacement sits 7.3 points from parity when length is controlled should be read as "closer to parity than the baseline", not as a precise figure.`,
+        `Unresolved disagreement. Section 5.8 reports two evaluators disagreeing about whether the generators differ at all, and the data do not separate the two readings. This is the largest single open question in the work, and it propagates: if the Judge's preference is an artefact rather than a quality signal, then the winner column - and therefore the Judge's contribution to every confidence score - carries that artefact. Nothing in this report rules that out.`,
       ],
     },
   ],

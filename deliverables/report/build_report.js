@@ -306,10 +306,17 @@ function chapterBlocks() {
     out.push(h1(`Chapter ${ci + 1}    ${ch.title}`));
     ch.sections.forEach((sec, si) => {
       out.push(h2(`${ci + 1}.${si + 1}    ${sec.heading}`));
+      // Render prose and tables in alternating order: paras, table, paras2,
+      // table2, ... so a section can carry several tables with narrative
+      // between them without needing a bespoke key for each position.
       (sec.paras || []).forEach((p) => out.push(body(p)));
       if (sec.bullets) out.push(...bullets(sec.bullets));
-      if (sec.table) out.push(...makeTable(sec.table));
-      (sec.paras2 || []).forEach((p) => out.push(body(p)));
+      for (let i = 1; i <= 6; i++) {
+        const tKey = i === 1 ? "table" : `table${i}`;
+        const pKey = `paras${i + 1}`;
+        if (sec[tKey]) out.push(...makeTable(sec[tKey]));
+        if (sec[pKey]) sec[pKey].forEach((p) => out.push(body(p)));
+      }
       // figures are referenced by key; a section may carry up to two
       for (const key of [sec.figure, sec.figure2]) {
         if (!key) continue;
