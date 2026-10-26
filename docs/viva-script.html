@@ -1,0 +1,313 @@
+<title>Viva Script</title>
+<style>
+  :root {
+    --bg: #EDEFF0; --surface: #FFFFFF; --surface-2: #E3E7EA;
+    --ink: #171B20; --ink-soft: #4E5763; --ink-faint: #838B96;
+    --border: #D3D8DC; --border-strong: #B7BEC5;
+    --accent: #33507D; --accent-strong: #223B60; --accent-wash: #E4E9F1;
+    --gold: #B9812A; --gold-wash: #F5EAD6;
+    --teal: #2A8F86; --teal-wash: #E1EFEE;
+    --rust: #AE4A2E; --rust-wash: #F5E5DF;
+    --shadow: 0 1px 2px rgba(23,27,32,.05), 0 6px 20px -8px rgba(23,27,32,.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10141A; --surface: #171D25; --surface-2: #1E2530;
+      --ink: #E7E9EC; --ink-soft: #A2ABB8; --ink-faint: #6C7684;
+      --border: #2B3440; --border-strong: #3A4552;
+      --accent: #8AAAE0; --accent-strong: #B2CCF3; --accent-wash: #1C2836;
+      --gold: #E3AD52; --gold-wash: #2C2415;
+      --teal: #55C2B7; --teal-wash: #142623;
+      --rust: #E2795A; --rust-wash: #2B1C16;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -8px rgba(0,0,0,.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10141A; --surface: #171D25; --surface-2: #1E2530;
+    --ink: #E7E9EC; --ink-soft: #A2ABB8; --ink-faint: #6C7684;
+    --border: #2B3440; --border-strong: #3A4552;
+    --accent: #8AAAE0; --accent-strong: #B2CCF3; --accent-wash: #1C2836;
+    --gold: #E3AD52; --gold-wash: #2C2415;
+    --teal: #55C2B7; --teal-wash: #142623;
+    --rust: #E2795A; --rust-wash: #2B1C16;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -8px rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); margin: 0;
+         font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+         font-size: 16px; line-height: 1.62; }
+  h1,h2,h3 { font-family: "Fraunces", Georgia, serif; font-weight: 600; text-wrap: balance; }
+  code { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: .87em;
+         background: var(--surface-2); padding: .1em .4em; border-radius: 4px; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px 80px; }
+
+  header.hero { padding: 48px 0 26px; border-bottom: 2px solid var(--border-strong); margin-bottom: 30px; }
+  header.hero .kicker { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: .16em;
+                        text-transform: uppercase; color: var(--rust); margin-bottom: 10px; }
+  header.hero h1 { font-size: 36px; margin: 0 0 10px; line-height: 1.15; }
+  header.hero p { color: var(--ink-soft); margin: 0; font-size: 16.5px; }
+
+  h2.part { font-size: 24px; margin: 46px 0 6px; padding-top: 18px; border-top: 2px solid var(--border-strong); }
+  h2.part .n { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--rust);
+               display: block; letter-spacing: .12em; margin-bottom: 4px; }
+  .lede { color: var(--ink-soft); margin: 0 0 20px; }
+  h3.sub { font-size: 18px; margin: 28px 0 8px; }
+
+  .say { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+         border-radius: 8px; padding: 16px 18px; margin: 12px 0 16px; box-shadow: var(--shadow); }
+  .say .tag { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .13em;
+              text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 7px; }
+  .say p { margin: 0 0 10px; } .say p:last-child { margin-bottom: 0; }
+
+  .note { background: var(--gold-wash); border: 1px solid var(--gold); border-radius: 8px;
+          padding: 13px 16px; margin: 14px 0; font-size: 15px; }
+  .note b { color: var(--gold); }
+  .warn { background: var(--rust-wash); border: 1px solid var(--rust); border-radius: 8px;
+          padding: 13px 16px; margin: 14px 0; font-size: 15px; }
+  .warn b { color: var(--rust); }
+  .ok { background: var(--teal-wash); border: 1px solid var(--teal); border-radius: 8px;
+        padding: 13px 16px; margin: 14px 0; font-size: 15px; }
+  .ok b { color: var(--teal); }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px;
+          background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  th { background: var(--accent-wash); color: var(--accent-strong); text-align: left;
+       padding: 9px 12px; font-size: 13px; font-weight: 600; }
+  td { padding: 9px 12px; border-top: 1px solid var(--border); vertical-align: top; }
+  tr.hl td { background: var(--gold-wash); font-weight: 600; }
+
+  .qa { background: var(--surface); border: 1px solid var(--border); border-radius: 9px;
+        padding: 15px 17px; margin: 13px 0; box-shadow: var(--shadow); }
+  .qa .q { font-weight: 600; font-size: 16px; margin-bottom: 9px; display: flex; gap: 9px; }
+  .qa .q .mark { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--rust);
+                 background: var(--rust-wash); border-radius: 5px; padding: 2px 7px; height: fit-content; flex: none; }
+  .qa .a { color: var(--ink-soft); font-size: 15.3px; }
+  .qa .a strong { color: var(--ink); }
+  .lead-in { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .1em;
+             text-transform: uppercase; color: var(--teal); }
+
+  ul, ol { padding-left: 22px; } li { margin: 5px 0; }
+  .time { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-faint); }
+
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { margin: 14mm 0; }
+    body { font-size: 11.5pt; }
+    .say, .qa, table, .note, .warn, .ok { break-inside: avoid; }
+    h2.part, h3.sub { break-after: avoid; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Viva Preparation &middot; Final Year Project &middot; 2026&ndash;27</div>
+  <h1>Agentic Multi-LLM Validation System</h1>
+  <p>A spoken script: the project end to end, why the threshold is 0.72, and every test that was run to establish it.</p>
+</header>
+
+<div class="note">
+  <b>How to use this.</b> Part 1 is a continuous script you can deliver more or less verbatim &mdash; about six minutes.
+  Part 2 is the threshold set-piece, which is the question most likely to decide the viva; it has a one-sentence,
+  a thirty-second and a full version so you can match the depth of the question. Part 3 is an inventory of every
+  experiment, so that whichever one gets picked on you can say what it proved. Part 4 is anticipated questions.
+  Part 5 is what to do when you do not know.
+</div>
+
+<!-- ============================================================= -->
+<h2 class="part"><span class="n">PART 1</span>The walkthrough <span class="time">&nbsp;&nbsp;~6 minutes</span></h2>
+<p class="lede">Deliver this as one piece. Do not stop for breath at the architecture &mdash; the interesting part is what comes after it.</p>
+
+<h3 class="sub">1.1 &nbsp;Opening <span class="time">30 s</span></h3>
+<div class="say"><span class="tag">Say</span>
+<p>Large language models answer fluently whether or not they are correct. A wrong answer looks exactly like a right one &mdash; same tone, same confidence, no error raised. That is the problem we set out to address.</p>
+<p>Our system answers every question <em>twice</em>, with two different local models, and then validates the pair instead of trusting either one. Everything runs offline on a single workstation, with no paid APIs.</p>
+<p>But the part we would like to be examined on is not the pipeline. It is that we had no answer key &mdash; no ground truth &mdash; and we still had to prove the thing works. That constraint shaped every decision in the project.</p>
+</div>
+
+<h3 class="sub">1.2 &nbsp;The problem <span class="time">45 s</span></h3>
+<div class="say"><span class="tag">Say</span>
+<p>The standard fix for this is to have a second model grade the first &mdash; LLM-as-a-judge. It scales, which is why everyone uses it. But it is a measuring instrument built out of the same material as the thing being measured, and the literature documents three ways it goes wrong: judges prefer answers in certain positions, they prefer longer answers, and they prefer text they wrote themselves.</p>
+<p>Second constraint: most published work assumes either human preference labels or a frontier commercial judge like GPT-4. We had neither an annotation budget nor an API budget, and for any deployment handling institutional data, sending it to a third party is not an option anyway.</p>
+<p>So the research question became narrow and answerable: <strong>can you validate a locally hosted question-answering system when no ground truth exists at all &mdash; and can you turn the same scrutiny on the validation machinery itself?</strong></p>
+</div>
+
+<h3 class="sub">1.3 &nbsp;The architecture <span class="time">90 s</span></h3>
+<div class="say"><span class="tag">Say</span>
+<p>Six stages. Stages one and two: LLaMA&nbsp;3 and Mistral each generate an answer independently &mdash; different model families, so their mistakes are less likely to coincide.</p>
+<p>Stage three: phi3 acts as Verifier. Stage five: qwen3.5 acts as Judge. Both score <em>both</em> answers blind on the same eight-factor, eighty-point rubric. Stage four runs in parallel: embedding similarity, cross-model agreement, and external lookups against Wikipedia and Wikidata.</p>
+<p>Those six signals blend into one confidence score between zero and one. If it falls below 0.72 the answer is regenerated, up to three attempts, and we keep the best attempt rather than the latest. Stage six: Gemma&nbsp;2 merges the winning pair into the final answer.</p>
+<p>Two design rules hold throughout. <strong>No model both writes an answer and evaluates or merges it.</strong> And the evaluators never see which system wrote which answer &mdash; answer order is a fresh coin flip on every question.</p>
+</div>
+<div class="note"><b>If asked why six models and not one:</b> because the signals have to fail <em>differently</em>. We tested that &mdash; thirteen of the fifteen signal pairs correlate below 0.13, so they are genuinely measuring different things rather than restating one measurement six times.</div>
+
+<h3 class="sub">1.4 &nbsp;The validation problem <span class="time">45 s</span></h3>
+<div class="say"><span class="tag">Say</span>
+<p>Here is the difficulty. With no answer key we cannot measure accuracy. So we defined what we <em>could</em> measure without labels, and only claimed those things.</p>
+<p>We can measure whether an evaluator discriminates &mdash; give it a deliberately broken answer and see whether it notices. We can measure internal consistency between two independent evaluators. We can measure whether regeneration actually improves an answer. And we can calibrate a decision threshold against an observable outcome.</p>
+<p>What we <em>cannot</em> do is state an accuracy figure. We never claim one anywhere in the report, and that is deliberate.</p>
+</div>
+
+<h3 class="sub">1.5 &nbsp;Headline results <span class="time">90 s</span></h3>
+<div class="say"><span class="tag">Say</span>
+<p>We generated 5,000 questions across ten domains &mdash; 8,432 logged attempts, about 146 GPU-hours.</p>
+<p>The threshold, 0.72, comes from three independent statistical routes that converge on the same narrow band. I can take you through that in detail &mdash; it is the part of the project I would most like to explain.</p>
+<p>The verifier discriminates decisively: intact answers score 77 to 80 out of 80, deliberately broken ones score 0 to 8. A seventy-four point separation.</p>
+<p>And the result we are most pleased with is a negative one about ourselves. We turned the measurement apparatus on our own design and found that the agent merging the final answer preferred <em>its own</em> generated text by 18.1 percentage points, and preferred whatever it read first by another 10.8. We had not suspected it. We measured it, we tested length as an alternative explanation and ruled it out, and we changed the architecture.</p>
+</div>
+
+<h3 class="sub">1.6 &nbsp;Close <span class="time">20 s</span></h3>
+<div class="say"><span class="tag">Say</span>
+<p>So the honest summary is that this is not a correctness oracle. It is a <strong>calibrated quality gate</strong>: it reliably separates weaker answers from stronger ones and acts on that separation, while being explicit about what it cannot certify.</p>
+</div>
+
+<!-- ============================================================= -->
+<h2 class="part"><span class="n">PART 2</span>Why 0.72 &mdash; the set-piece</h2>
+<p class="lede">This is the question most likely to decide the viva. Three depths below; pick one and stop talking.</p>
+
+<h3 class="sub">One sentence</h3>
+<div class="say"><span class="tag">Say</span>
+<p>&ldquo;Three independent statistical tests agree on a band of 0.69 to 0.75, and 0.72 is the bootstrap median of that band &mdash; so it is the middle of the evidence, not a round number we liked.&rdquo;</p>
+</div>
+
+<h3 class="sub">Thirty seconds</h3>
+<div class="say"><span class="tag">Say</span>
+<p>&ldquo;The hard part was not picking a number, it was that the data needed to pick it <em>does not exist by default</em>. The threshold controls a retry loop, so you only ever observe retries <em>below</em> the threshold. Everything above it is censored.</p>
+<p>We fixed that by injecting a control group &mdash; regenerating a random fraction of answers that had already <em>passed</em>, purely to measure them. Then three tests: a significance test, an ROC analysis, and a bootstrap. They agree on 0.69&ndash;0.75. We took 0.72, the bootstrap median.&rdquo;</p>
+</div>
+
+<h3 class="sub">The full answer</h3>
+
+<p><strong>Step 1 &mdash; name the problem.</strong> The quantity that should set the threshold is: <em>for an answer scoring x, would regenerating it produce something better?</em> But answers above the current threshold are never regenerated, so for the whole region above it that quantity has never been observed. Fitting to the visible data alone estimates the wrong thing, and does so in a direction that tends to confirm whatever threshold is already in place.</p>
+
+<div class="note"><b>Say this line.</b> &ldquo;The gate censors exactly the observations you need to calibrate the gate.&rdquo; It shows you understood the problem rather than just ran a test.</div>
+
+<p><strong>Step 2 &mdash; the control group.</strong> We deliberately regenerated a random fraction of answers that had already passed, purely for measurement. 165 such regenerations. That produces unbiased observations above the threshold at a modest cost in compute.</p>
+
+<p><strong>Step 3 &mdash; three tests.</strong></p>
+<table>
+  <thead><tr><th>Test</th><th>What it asks</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td>Two-proportion z-test</td><td>Does improvement rate differ across confidence bands at all?</td><td>Yes, <b>p = 0.011</b></td></tr>
+    <tr><td>ROC + Youden's J</td><td>Where is the optimal single cutoff?</td><td><b>t = 0.70</b>, AUC <b>0.629</b></td></tr>
+    <tr class="hl"><td>Bootstrap, 2,000 resamples</td><td>Is that optimum stable, or an artefact of this sample?</td><td>median <b>0.72</b>, 95% CI <b>[0.69, 0.75]</b></td></tr>
+  </tbody>
+</table>
+
+<p><strong>Step 4 &mdash; why 0.72 specifically.</strong> Youden's J is near-flat from 0.70 to 0.74, so those values are statistically indistinguishable. That means the choice <em>within</em> the band is a policy decision, not a statistical one &mdash; and saying so is a strength, not a hedge.</p>
+
+<table>
+  <thead><tr><th>Threshold</th><th>Youden J</th><th>Sensitivity</th><th>Specificity</th><th>Character</th></tr></thead>
+  <tbody>
+    <tr><td>0.70</td><td>0.190</td><td>54.6%</td><td>64.4%</td><td>ROC point optimum</td></tr>
+    <tr class="hl"><td>0.72</td><td>0.170</td><td>66.7%</td><td>50.3%</td><td><b>Adopted</b> &mdash; bootstrap median, balanced</td></tr>
+    <tr><td>0.75</td><td>0.169</td><td>86.7%</td><td>30.2%</td><td>Our earlier value &mdash; recall-first</td></tr>
+  </tbody>
+</table>
+
+<div class="say"><span class="tag">Say</span>
+<p>&ldquo;We ran at 0.75 for most of the project. When we finished the full dataset and re-ran the calibration, 0.75 turned out to sit at the very <em>edge</em> of the confidence interval &mdash; it caught 86.7% of improvable answers but needlessly regenerated seven in ten answers that were already fine. 0.72 is the middle of the interval and balances the two. So we lowered it, and documented why.&rdquo;</p>
+</div>
+
+<div class="warn"><b>Be ready for this follow-up: &ldquo;AUC 0.629 is weak.&rdquo;</b> Agree with it. Say: &ldquo;Yes &mdash; 0.5 is a coin flip and 1.0 is perfect, so 0.629 means the score discriminates but not strongly. We report it as it is rather than framing it favourably. The flat J curve is a direct consequence of that weak discrimination. What the significance test establishes is that the relationship is <em>real</em>; what the AUC says is that it is <em>modest</em>. Both are true and both are in the report.&rdquo;</div>
+
+<div class="warn"><b>And this one: &ldquo;37% of your answers ship below the threshold. Isn't the gate failing?&rdquo;</b> Say: &ldquo;That is the attempt cap, not a gate failure. Those questions were regenerated up to the maximum of three attempts and still did not clear 0.72, so we shipped the best attempt we had. The threshold means &lsquo;try up to three times to reach 0.72, then ship the best&rsquo; &mdash; not a hard guarantee. We surface that number explicitly rather than hide it.&rdquo;</div>
+
+<div class="ok"><b>The bug worth volunteering.</b> While doing this, our first ROC run gave AUC ~0.51 and an &ldquo;optimum&rdquo; below the threshold then in force &mdash; contradicting a band comparison we had already established as clean. We traced it rather than averaging it away. The control-sampling rate had changed mid-run from 8% to 60%, and we were applying one weight to every record, undercounting the early ones by 7.5&times;. Fixed with inverse-probability weighting by the rate actually in force. Volunteering this makes the final number <em>more</em> credible, not less.</div>
+
+<!-- ============================================================= -->
+<h2 class="part"><span class="n">PART 3</span>Every test we ran</h2>
+<p class="lede">If an examiner picks one, you should be able to say what it proved in a sentence. That is what this table is for.</p>
+
+<table>
+  <thead><tr><th>Test</th><th>Method</th><th>Result</th><th>What it proves</th></tr></thead>
+  <tbody>
+    <tr><td><b>Verifier discrimination</b></td><td>Score intact vs deliberately broken answers</td><td>77&ndash;80/80 vs 0&ndash;8/80, gap 74.5</td><td>The evaluator is not rubber-stamping</td></tr>
+    <tr><td><b>Judge selection</b></td><td>5 candidate models, N=40 blind scores each</td><td>CompassJudger flat-scored 57.5% of the time; qwen3.5 never</td><td>Pick a judge on per-criterion variance, not mean</td></tr>
+    <tr><td><b>Rubric calibration</b></td><td>Four rubric versions tested in sequence</td><td>Stricter <em>wording</em> alone: 76.3 &rarr; 76.4/80, no effect</td><td>Telling a model to be harsh is not giving it a basis to be harsh</td></tr>
+    <tr><td><b>Evaluator independence</b></td><td>Compare Verifier and Judge totals</td><td>32 of 37 rows identical digit-for-digit</td><td>The Judge was seeing the Verifier's scores &mdash; fixed</td></tr>
+    <tr class="hl"><td><b>Threshold calibration</b></td><td>Control group + z-test + ROC + bootstrap</td><td>p=0.011; AUC 0.629; median 0.72, CI [0.69,0.75]</td><td>0.72 is evidence-based, not chosen</td></tr>
+    <tr><td><b>Position vs identity bias</b></td><td>Cross prompt slot against true model, 5,000 rows</td><td>Judge picks slot 2 in 66.9%; by identity only 57/43</td><td>Raw win rates are not a model ranking</td></tr>
+    <tr class="hl"><td><b>Combiner self-preference</b></td><td>Embed final vs both candidates; cross position &times; identity &times; judge</td><td>Identity <b>+18.1 pp</b>, position <b>+10.8 pp</b>, length ruled out (r=0.029)</td><td>Our own design was biased; we found it by measuring</td></tr>
+    <tr><td><b>Controlled replay</b></td><td>1,600 calls: 400 Q &times; 2 models &times; 2 orders, inputs frozen</td><td>Position 80.5% &rarr; <b>50.7%</b>; identity does not reach parity</td><td>The fix works on position; we report where it does not</td></tr>
+    <tr><td><b>Regeneration validity</b></td><td>Compare attempt 1 vs 2 vs 3 on the same question</td><td>Improves only <b>59.3%</b> of the time; best &ne; last in 43.2%</td><td>Justifies &ldquo;keep the best, not the latest&rdquo;</td></tr>
+    <tr><td><b>Signal independence</b></td><td>Correlation matrix over all six signals</td><td>13 of 15 pairs below 0.13</td><td>The blend is real, not six views of one number</td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>If asked &ldquo;which test matters most?&rdquo;</b> &mdash; the combiner self-preference one. Everything else validates the system. That one validates the <em>method</em>, by catching a defect in our own architecture that no amount of reasoning had predicted.</div>
+
+<!-- ============================================================= -->
+<h2 class="part"><span class="n">PART 4</span>Anticipated questions</h2>
+
+<div class="qa"><div class="q"><span class="mark">Q1</span>Why should anyone trust an LLM to judge another LLM?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;We don't &mdash; we test the judge first.&rdquo; <strong>Then:</strong> before using any judge we gave it a deliberately broken answer alongside a good one. Intact answers scored 77&ndash;80 out of 80; broken ones 0&ndash;8. It discriminates. We also rejected one candidate judge outright because it gave all eight rubric criteria the same score on 57.5% of evaluations &mdash; its mean looked competitive, which is exactly why we checked per-criterion variance instead.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q2</span>You have no ground truth. So what are you actually validating?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;Four things that don't need labels, and we claim nothing beyond them.&rdquo; <strong>Then:</strong> evaluator discrimination, inter-evaluator consistency, whether regeneration improves an answer, and the calibration of the decision threshold. What we cannot establish is absolute accuracy, and we never state an accuracy figure anywhere in the report.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q3</span>Why 0.72? Isn't that arbitrary?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;Three independent methods agree on 0.69 to 0.75, and 0.72 is the bootstrap median.&rdquo; <strong>Then:</strong> see Part 2. Mention censoring and the control group &mdash; that is the part that shows understanding.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q4</span>Your system says Mistral is better. Is it?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;Our two evaluators disagree about that, and we report it unresolved.&rdquo; <strong>Then:</strong> the Judge scores Mistral 2.68 rubric points higher and picks it 57% to 43%. The Verifier, scoring the same 5,000 answers on the same rubric, sees a gap of 0.22 points &mdash; essentially nothing. Either the difference is real and the Judge is more sensitive, or the Judge has a model-specific preference. Our data does not separate those, so we state it as an open question rather than claiming a winner.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q5</span>Did anything go wrong?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;Five measurement errors, all caught before they reached a conclusion, all documented.&rdquo; <strong>Then:</strong> a model reporting a total that contradicted its own scores; the Judge being shown the Verifier's scores; a sampling weight applied after the rate had changed; duplicate &lsquo;final&rsquo; rows from an interrupted run; and a viewer that labelled winners by prompt slot rather than model, which made a screenshot look like overwhelming bias from data that was never wrong. Each was found because a number looked <em>too clean</em>, not because something crashed.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q6</span>You changed the combiner late. Isn't that a red flag?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;It's the opposite &mdash; it's the methodology working on us.&rdquo; <strong>Then:</strong> the combiner was LLaMA&nbsp;3, which is also one of the generators, so it was merging its own writing. Measured across all 5,000 rows with position and judge verdict crossed: +18.1 points of self-preference, +10.8 for prompt position, and length tested and excluded. We replaced it with Gemma&nbsp;2, which is neither generator, and then ran 1,600 calls to verify rather than assume.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q7</span>Did the replacement fix it?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;Partly, and we report the part it didn't.&rdquo; <strong>Then:</strong> position preference dropped from 80.5% to 50.7% &mdash; essentially neutral. But identity did not land on parity; it reversed sign, leaning toward the other candidate, about half of which is explained by length since Gemma&nbsp;2 compresses much harder. <strong>Own this:</strong> we had predicted a model swap could not touch position bias, and the measurement proved us wrong. We say so in the report.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q8</span>Does the regeneration loop actually help?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;On average yes, but only 59% of the time &mdash; which is why we keep the best attempt, not the latest.&rdquo; <strong>Then:</strong> a retry improves the score in 59.3% of cases, so 40.7% come out worse. And the best attempt was the <em>last</em> attempt in only 56.8% of multi-attempt questions &mdash; so in 43.2%, a system that shipped its latest retry would have shipped something worse than it had already produced. Nearly half the loop's value comes from remembering, not regenerating.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q9</span>Why six signals? Isn't the judge enough?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;Because they fail differently, and we tested that.&rdquo; <strong>Then:</strong> thirteen of fifteen signal pairs correlate below 0.13. The judge assesses correctness but is a language model with a model's blind spots; similarity never mistakes an off-topic answer for an on-topic one; the encyclopedia checks are the only signals not produced by a model at all. The judge carries 0.40 &mdash; deliberately under half, so the other five together can outvote it.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q10</span>What about RAG? You have a retrieval system.</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;It exists and it works in the live demo, but it was inert for the entire dataset, and we say so.&rdquo; <strong>Then:</strong> the batch harness never passed retrieval context, so all 5,000 questions ran without it. That means the Context Relevance criterion measured topic adherence rather than document fidelity, and the retrieval similarity threshold cannot be calibrated from this data at all. We found this late and documented it as a limitation rather than quietly leaving the implication standing.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q11</span>Would this transfer to other models or another domain?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;The method should; the numbers won't.&rdquo; <strong>Then:</strong> blind evaluation, discrimination testing, control-group calibration and bias decomposition are model- and domain-agnostic. The threshold, the weights and the choice of judge are specific to this model set and this corpus. We state that as a hypothesis, not a result &mdash; we haven't tested the transfer.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q12</span>What's the cost? Isn't six models wasteful?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;About 62 seconds per attempt, 146 GPU-hours for the dataset &mdash; and yes, it buys quality at the price of speed.&rdquo; <strong>Then:</strong> the regeneration loop is the main multiplier, at 1.69 attempts per question. The Judge dominates per-attempt cost, which is why distilling it into a small regressor is the obvious next step &mdash; and that should come <em>after</em> bias correction, not before, or the student model inherits the teacher's bias.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q13</span>What would you do differently?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;Two things, concretely.&rdquo; <strong>Then:</strong> first, wire retrieval into the batch harness from day one, so the retrieval threshold is calibratable. Second, make the combiner extractive &mdash; select sentences by relevance and non-redundancy rather than generating &mdash; which removes position bias, self-preference and the length lean by construction instead of by substitution. We'd also check the display layer whenever we fix the logic layer; one of our five errors existed because a fix was applied to scoring and not to the viewer.</div></div>
+
+<div class="qa"><div class="q"><span class="mark">Q14</span>What is the single contribution you'd defend?</div>
+<div class="a"><span class="lead-in">Lead:</span> &ldquo;A reusable protocol for validating a system you cannot label &mdash; and the proof that it works is that it caught us.&rdquo; <strong>Then:</strong> discrimination testing, control-group calibration under censoring, and bias decomposition with confounds crossed. It found an 18-point bias in our own architecture that we had not suspected and that no amount of reasoning had predicted.</div></div>
+
+<!-- ============================================================= -->
+<h2 class="part"><span class="n">PART 5</span>When you don't know</h2>
+
+<div class="warn"><b>Never bluff a number.</b> If you cannot recall a figure, say &ldquo;I don't have that exact figure to hand &mdash; it's in Chapter 5 / the research log &mdash; but the direction was&hellip;&rdquo; and give the direction. An examiner who catches an invented number will doubt every number you gave.</div>
+
+<div class="note"><b>If asked something you genuinely didn't do:</b> say so plainly and say what you'd need to do it. &ldquo;We didn't test that. To do it properly you'd need X.&rdquo; That reads as judgement. Improvising a method on the spot reads as the opposite.</div>
+
+<h3 class="sub">Numbers to have cold</h3>
+<table>
+  <thead><tr><th>Figure</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr class="hl"><td>Threshold &amp; interval</td><td><b>&tau; = 0.72</b>, 95% CI [0.69, 0.75]</td></tr>
+    <tr><td>Three tests</td><td>z-test p = 0.011 &middot; AUC 0.629 &middot; bootstrap median 0.72</td></tr>
+    <tr><td>Dataset</td><td>5,000 questions, 8,432 attempts, 10 domains, ~146 GPU-hours</td></tr>
+    <tr><td>Verifier discrimination</td><td>77&ndash;80 vs 0&ndash;8 out of 80 (gap 74.5)</td></tr>
+    <tr><td>Combiner bias</td><td>identity +18.1 pp &middot; position +10.8 pp &middot; length r = 0.029</td></tr>
+    <tr><td>Replay</td><td>1,600 calls &middot; position 80.5% &rarr; 50.7%</td></tr>
+    <tr><td>Regeneration</td><td>improves 59.3% &middot; best &ne; last in 43.2%</td></tr>
+    <tr><td>Below threshold at ship</td><td>37.0% (attempt cap reached)</td></tr>
+    <tr><td>Measurement errors</td><td>5, all documented</td></tr>
+  </tbody>
+</table>
+
+<div class="ok"><b>The posture to hold throughout.</b> This project's strongest claim is not that the system is accurate &mdash; you cannot show that without labels, and you should not try. It is that you built something that measures quality honestly, turned it on yourselves, found you were wrong, and fixed it. Lead with that whenever you are given room.</div>
+
+</div>

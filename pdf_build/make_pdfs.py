@@ -184,7 +184,7 @@ def main():
     BUILD.mkdir(exist_ok=True)
 
     # 1 & 2: document pages
-    for name in ("project-report", "defense-prep"):
+    for name in ("project-report", "defense-prep", "viva-script"):
         src = DOCS / f"{name}.html"
         pr = BUILD / f"{name}_print.html"
         make_print_html(src, DOC_PRINT_CSS, pr)
@@ -220,8 +220,8 @@ def main():
     render_pdf(log_html, OUT / "research-log.pdf", landscape=False)
 
     print("\nDone. PDFs written to docs/:")
-    for f in ("project-report.pdf", "defense-prep.pdf", "presentation.pdf",
-              "research-paper.pdf", "fyp-poster.pdf", "research-log.pdf"):
+    for f in ("project-report.pdf", "defense-prep.pdf", "viva-script.pdf",
+              "presentation.pdf", "research-paper.pdf", "fyp-poster.pdf", "research-log.pdf"):
         p = OUT / f
         size = p.stat().st_size // 1024 if p.exists() else 0
         print(f"  {f}  ({size} KB)")
